@@ -1,0 +1,245 @@
+@import url('https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&family=Poppins:wght@300;400;500;600;700&family=Space+Grotesk:wght@400;500;600;700&display=swap');
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  font-family: 'Outfit', sans-serif;
+  @apply bg-light dark:bg-dark text-dark dark:text-light transition-colors duration-300;
+}
+
+/* Scrollbar styling */
+::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+
+::-webkit-scrollbar-track {
+  @apply bg-light dark:bg-dark;
+}
+
+::-webkit-scrollbar-thumb {
+  @apply bg-primary rounded-lg hover:bg-secondary;
+}
+
+/* Custom animations */
+@keyframes float {
+  0%, 100% { transform: translateY(0px); }
+  50% { transform: translateY(-20px); }
+}
+
+@keyframes glow {
+  0%, 100% { text-shadow: 0 0 10px rgba(220, 38, 38, 0.3); }
+  50% { text-shadow: 0 0 20px rgba(252, 211, 77, 0.5); }
+}
+
+@keyframes shimmer {
+  0% { background-position: -1000px 0; }
+  100% { background-position: 1000px 0; }
+}
+
+@keyframes subtle-glow {
+  0%, 100% { box-shadow: 0 10px 25px rgba(220, 38, 38, 0.15); }
+  50% { box-shadow: 0 10px 35px rgba(220, 38, 38, 0.25); }
+}
+
+@keyframes blob-bounce {
+  0%, 100% { transform: translate(0, 0) scale(1); }
+  25% { transform: translate(20px, -20px) scale(1.1); }
+  50% { transform: translate(0, 20px) scale(1); }
+  75% { transform: translate(-20px, -10px) scale(1.05); }
+}
+
+/* 3D Flip Animation */
+@keyframes flip-in {
+  0% {
+    opacity: 0;
+    transform: rotateY(90deg) rotateX(10deg);
+  }
+  100% {
+    opacity: 1;
+    transform: rotateY(0deg) rotateX(0deg);
+  }
+}
+
+@keyframes flip-out {
+  0% {
+    opacity: 1;
+    transform: rotateY(0deg) rotateX(0deg);
+  }
+  100% {
+    opacity: 0;
+    transform: rotateY(-90deg) rotateX(-10deg);
+  }
+}
+
+/* 3D Cube Rotation */
+@keyframes rotate-3d {
+  0% {
+    transform: rotateX(0deg) rotateY(0deg) rotateZ(0deg);
+  }
+  100% {
+    transform: rotateX(360deg) rotateY(360deg) rotateZ(0deg);
+  }
+}
+
+/* Cinematic Slide In */
+@keyframes slide-in-left {
+  0% {
+    opacity: 0;
+    transform: translateX(-100px) skewX(10deg);
+  }
+  100% {
+    opacity: 1;
+    transform: translateX(0) skewX(0deg);
+  }
+}
+
+@keyframes slide-in-right {
+  0% {
+    opacity: 0;
+    transform: translateX(100px) skewX(-10deg);
+  }
+  100% {
+    opacity: 1;
+    transform: translateX(0) skewX(0deg);
+  }
+}
+
+/* Zoom & Blur In */
+@keyframes zoom-blur-in {
+  0% {
+    opacity: 0;
+    transform: scale(0.8) blur(10px);
+  }
+  100% {
+    opacity: 1;
+    transform: scale(1) blur(0);
+  }
+}
+
+/* Stagger Pop Animation */
+@keyframes pop-in {
+  0% {
+    opacity: 0;
+    transform: scale(0) rotateZ(-180deg);
+  }
+  100% {
+    opacity: 1;
+    transform: scale(1) rotateZ(0deg);
+  }
+}
+
+/* Floating 3D Cards */
+@keyframes float-3d {
+  0%, 100% {
+    transform: translateY(0px) rotateX(0deg) rotateY(-10deg);
+  }
+  50% {
+    transform: translateY(-20px) rotateX(5deg) rotateY(10deg);
+  }
+}
+
+/* Aurora Background Shift */
+@keyframes aurora-shift {
+  0% {
+    background-position: 0% 50%;
+  }
+  50% {
+    background-position: 100% 50%;
+  }
+  100% {
+    background-position: 0% 50%;
+  }
+}
+
+.float {
+  animation: float 3s ease-in-out infinite;
+}
+
+.glow {
+  animation: glow 2s ease-in-out infinite;
+}
+
+.shimmer {
+  background: linear-gradient(90deg, transparent 0%, rgba(255,255,255,0.2) 50%, transparent 100%);
+  background-size: 1000px 100%;
+  animation: shimmer 2s infinite;
+}
+
+.subtle-glow {
+  animation: subtle-glow 3s ease-in-out infinite;
+}
+
+/* 3D Animations */
+.flip-in {
+  animation: flip-in 0.8s cubic-bezier(0.34, 1.56, 0.64, 1);
+  perspective: 1000px;
+}
+
+.flip-out {
+  animation: flip-out 0.8s cubic-bezier(0.34, 1.56, 0.64, 1);
+  perspective: 1000px;
+}
+
+.rotate-3d {
+  animation: rotate-3d 8s linear infinite;
+  perspective: 1000px;
+}
+
+.slide-in-left {
+  animation: slide-in-left 0.8s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+.slide-in-right {
+  animation: slide-in-right 0.8s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+.zoom-blur-in {
+  animation: zoom-blur-in 0.8s ease-out;
+}
+
+.pop-in {
+  animation: pop-in 0.6s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+.float-3d {
+  animation: float-3d 4s ease-in-out infinite;
+  perspective: 1000px;
+}
+
+.aurora-shift {
+  animation: aurora-shift 15s ease infinite;
+}
+
+/* Smooth transitions */
+.smooth-transition {
+  transition: all 0.3s ease-in-out;
+}
+
+/* Page transition */
+.page-transition-enter {
+  animation: zoom-blur-in 0.6s ease-out forwards;
+}
+
+.page-transition-exit {
+  animation: flip-out 0.4s ease-in forwards;
+}
+
+/* Glass morphism */
+.glass {
+  background: rgba(255, 255, 255, 0.1);
+  backdrop-filter: blur(12px);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+}
