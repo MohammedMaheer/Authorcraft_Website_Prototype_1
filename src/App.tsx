@@ -1,4 +1,4 @@
-import React, { Suspense, lazy, useState, useEffect } from 'react';
+import { Suspense, lazy, useState, useEffect } from 'react';
 import { BrowserRouter as Router, Routes, Route, useLocation } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { ThemeProvider } from './context/ThemeContext';
@@ -16,6 +16,7 @@ const Events = lazy(() => import('./pages/Events'));
 const Team = lazy(() => import('./pages/Team'));
 const Contact = lazy(() => import('./pages/Contact'));
 const Submit = lazy(() => import('./pages/Submit'));
+const Games = lazy(() => import('./pages/Games'));
 
 // Loading fallback
 const PageLoader = () => (
@@ -79,6 +80,7 @@ function AppRoutes() {
               <Route path="/team" element={<Team />} />
               <Route path="/contact" element={<Contact />} />
               <Route path="/submit" element={<Submit />} />
+              <Route path="/games" element={<Games />} />
             </Routes>
           </Suspense>
         </main>

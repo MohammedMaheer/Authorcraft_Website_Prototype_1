@@ -45,7 +45,6 @@ const TextMorph3D: React.FC<TextMorphProps> = ({ text, className = '' }) => {
       const y = canvas.height / 2;
 
       // Create 3D perspective transform
-      const perspective = 500;
       const rotationY = Math.sin(time) * 0.3;
       const rotationX = Math.cos(time * 0.7) * 0.2;
       const scaleZ = Math.cos(time * 0.5) * 0.1 + 1;

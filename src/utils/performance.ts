@@ -14,15 +14,26 @@ export const usePerformanceMonitoring = () => {
     }
   };
 
-  // Measure Core Web Vitals
-  if ('web-vital' in window) {
-    const { getCLS, getFID, getFCP, getLCP, getTTFB } = require('web-vitals');
-    
-    getCLS(reportWebVitals);
-    getFID(reportWebVitals);
-    getFCP(reportWebVitals);
-    getLCP(reportWebVitals);
-    getTTFB(reportWebVitals);
+  // Measure Core Web Vitals using dynamic import
+  const initWebVitals = async () => {
+    try {
+      const webVitals = await import('web-vitals');
+      
+      // Modern web-vitals API (v4+)
+      if (webVitals.onCLS) webVitals.onCLS(reportWebVitals);
+      if (webVitals.onFCP) webVitals.onFCP(reportWebVitals);
+      if (webVitals.onLCP) webVitals.onLCP(reportWebVitals);
+      if (webVitals.onINP) webVitals.onINP(reportWebVitals); // INP replaces FID in modern API
+    } catch (err) {
+      console.warn('Web Vitals not available');
+    }
+  };
+
+  // Initialize on load
+  if (typeof window !== 'undefined' && window.requestIdleCallback) {
+    window.requestIdleCallback(() => initWebVitals());
+  } else if (typeof window !== 'undefined') {
+    setTimeout(() => initWebVitals(), 2000);
   }
 
   // Intersection Observer for lazy loading
@@ -40,7 +51,7 @@ export const usePerformanceMonitoring = () => {
 };
 
 // Image optimization utility
-export const optimizeImage = (src: string, width: number, height: number) => {
+export const optimizeImage = (src: string, width: number) => {
   return {
     src,
     srcSet: `${src}?w=${width * 1} 1x, ${src}?w=${width * 2} 2x`,
@@ -50,18 +61,23 @@ export const optimizeImage = (src: string, width: number, height: number) => {
 };
 
 // Debounce utility for scroll/resize events
-export const debounce = (func: Function, wait: number) => {
-  let timeout: NodeJS.Timeout;
-  return (...args: any[]) => {
+export const debounce = <T extends (...args: any[]) => any>(
+  func: T,
+  wait: number
+) => {
+  let timeout: ReturnType<typeof setTimeout>;
+  return (...args: Parameters<T>) => {
     clearTimeout(timeout);
     timeout = setTimeout(() => func(...args), wait);
   };
 };
 
 // RequestAnimationFrame throttle
-export const throttleRAF = (func: Function) => {
+export const throttleRAF = <T extends (...args: any[]) => any>(
+  func: T
+) => {
   let rafId: number;
-  return (...args: any[]) => {
+  return (...args: Parameters<T>) => {
     cancelAnimationFrame(rafId);
     rafId = requestAnimationFrame(() => func(...args));
   };

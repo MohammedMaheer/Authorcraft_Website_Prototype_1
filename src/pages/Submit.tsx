@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { motion } from 'framer-motion';
 import { Upload, Zap } from 'lucide-react';
+import { performFullContentReview, type FullContentReview } from '../utils/contentModeration';
 
 const Submit: React.FC = () => {
   const [formData, setFormData] = useState({
@@ -12,6 +13,7 @@ const Submit: React.FC = () => {
   });
 
   const [submitted, setSubmitted] = useState(false);
+  const [contentReview, setContentReview] = useState<FullContentReview | null>(null);
 
   const workTypes = ['Poem', 'Story', 'Script', 'Microfiction', 'Essay', 'Other'];
 
@@ -26,6 +28,12 @@ const Submit: React.FC = () => {
   ) => {
     const { name, value } = e.target;
     setFormData((prev) => ({ ...prev, [name]: value }));
+    
+    // Run AI review on content changes
+    if (name === 'content' && value.length > 10) {
+      const review = performFullContentReview(value);
+      setContentReview(review);
+    }
   };
 
   const handleSubmit = (e: React.FormEvent) => {
@@ -209,6 +217,157 @@ const Submit: React.FC = () => {
                     {formData.content.length}/5000 characters
                   </p>
                 </div>
+
+                {/* Comprehensive AI Content Review */}
+                {contentReview && (
+                  <motion.div
+                    initial={{ opacity: 0, y: 10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    className={`p-6 rounded-lg border-2 ${
+                      contentReview.qualityLevel === 'Excellent'
+                        ? 'bg-emerald-50 dark:bg-emerald-900/20 border-emerald-300'
+                        : contentReview.qualityLevel === 'Good'
+                        ? 'bg-blue-50 dark:bg-blue-900/20 border-blue-300'
+                        : contentReview.canPublish
+                        ? 'bg-amber-50 dark:bg-amber-900/20 border-amber-300'
+                        : 'bg-red-50 dark:bg-red-900/20 border-red-300'
+                    }`}
+                  >
+                    {/* Header: Score & Quality */}
+                    <div className="flex items-center justify-between mb-4 pb-4 border-b border-gray-200 dark:border-gray-700">
+                      <div className="flex items-center gap-3">
+                        <div className="text-3xl">
+                          {contentReview.qualityLevel === 'Excellent' && '🌟'}
+                          {contentReview.qualityLevel === 'Good' && '✨'}
+                          {contentReview.qualityLevel === 'Fair' && '👍'}
+                          {contentReview.qualityLevel === 'Needs Work' && '💭'}
+                          {contentReview.qualityLevel === 'Not Ready' && '❌'}
+                        </div>
+                        <div>
+                          <p className="font-bold text-gray-800 dark:text-gray-100 text-lg">
+                            {contentReview.qualityLevel}
+                          </p>
+                          <p className="text-sm text-gray-600 dark:text-gray-400">Quality Score</p>
+                        </div>
+                      </div>
+                      <div className="text-right">
+                        <p className="text-3xl font-bold bg-gradient-to-r from-primary to-secondary bg-clip-text text-transparent">
+                          {contentReview.overallScore}/100
+                        </p>
+                      </div>
+                    </div>
+
+                    {/* Score Bar */}
+                    <div className="mb-4">
+                      <div className="w-full bg-gray-300 dark:bg-gray-700 rounded-full h-3 overflow-hidden">
+                        <motion.div
+                          className={`h-3 rounded-full ${
+                            contentReview.qualityLevel === 'Excellent'
+                              ? 'bg-gradient-to-r from-emerald-400 to-emerald-600'
+                              : contentReview.qualityLevel === 'Good'
+                              ? 'bg-gradient-to-r from-blue-400 to-blue-600'
+                              : contentReview.canPublish
+                              ? 'bg-gradient-to-r from-amber-400 to-amber-600'
+                              : 'bg-gradient-to-r from-red-400 to-red-600'
+                          }`}
+                          initial={{ width: 0 }}
+                          animate={{ width: `${contentReview.overallScore}%` }}
+                          transition={{ duration: 0.8 }}
+                        />
+                      </div>
+                    </div>
+
+                    {/* Stats Grid */}
+                    {contentReview.analysis && (
+                      <div className="grid grid-cols-2 md:grid-cols-3 gap-3 mb-4">
+                        <div className="bg-white dark:bg-gray-800 p-3 rounded border border-gray-200 dark:border-gray-700">
+                          <p className="text-xs text-gray-600 dark:text-gray-400 uppercase font-bold">Words</p>
+                          <p className="text-lg font-bold text-primary">{contentReview.analysis.wordCount}</p>
+                        </div>
+                        <div className="bg-white dark:bg-gray-800 p-3 rounded border border-gray-200 dark:border-gray-700">
+                          <p className="text-xs text-gray-600 dark:text-gray-400 uppercase font-bold">Reading Time</p>
+                          <p className="text-lg font-bold text-primary">{contentReview.analysis.estimatedReadingTime}</p>
+                        </div>
+                        <div className="bg-white dark:bg-gray-800 p-3 rounded border border-gray-200 dark:border-gray-700">
+                          <p className="text-xs text-gray-600 dark:text-gray-400 uppercase font-bold">Readability</p>
+                          <p className="text-lg font-bold text-primary">{contentReview.analysis.readabilityScore}/100</p>
+                        </div>
+                        <div className="bg-white dark:bg-gray-800 p-3 rounded border border-gray-200 dark:border-gray-700">
+                          <p className="text-xs text-gray-600 dark:text-gray-400 uppercase font-bold">Avg Word Length</p>
+                          <p className="text-lg font-bold text-primary">{contentReview.analysis.averageWordLength}</p>
+                        </div>
+                        <div className="bg-white dark:bg-gray-800 p-3 rounded border border-gray-200 dark:border-gray-700">
+                          <p className="text-xs text-gray-600 dark:text-gray-400 uppercase font-bold">Vocabulary</p>
+                          <p className="text-lg font-bold text-primary">{contentReview.analysis.vocabularyDiversity}%</p>
+                        </div>
+                        <div className="bg-white dark:bg-gray-800 p-3 rounded border border-gray-200 dark:border-gray-700">
+                          <p className="text-xs text-gray-600 dark:text-gray-400 uppercase font-bold">Advanced Words</p>
+                          <p className="text-lg font-bold text-primary">{contentReview.analysis.advancedVocabularyCount}</p>
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Readability Level */}
+                    {contentReview.analysis && (
+                      <div className="mb-4 p-3 bg-white dark:bg-gray-800 rounded border border-gray-200 dark:border-gray-700">
+                        <p className="text-xs text-gray-600 dark:text-gray-400 uppercase font-bold mb-1">Readability Level</p>
+                        <p className="text-base font-bold text-gray-800 dark:text-gray-100">
+                          {contentReview.analysis.readabilityLevel}
+                        </p>
+                      </div>
+                    )}
+
+                    {/* Main Feedback */}
+                    {contentReview.feedback.length > 0 && (
+                      <div className="mb-4 pb-4 border-b border-gray-200 dark:border-gray-700">
+                        <p className="text-sm font-bold text-gray-800 dark:text-gray-100 mb-2">📊 Overall Analysis:</p>
+                        <div className="space-y-2">
+                          {contentReview.feedback.map((item, idx) => (
+                            <p key={idx} className="text-sm text-gray-700 dark:text-gray-300 flex items-start gap-2">
+                              <span className="mt-0.5 flex-shrink-0">{item.split(' ')[0]}</span>
+                              <span>{item.slice(item.split(' ')[0].length).trim()}</span>
+                            </p>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Detailed Suggestions */}
+                    {contentReview.suggestions.length > 0 && (
+                      <div className="mb-3">
+                        <p className="text-sm font-bold text-gray-800 dark:text-gray-100 mb-2">💡 Suggestions to Improve:</p>
+                        <div className="space-y-2">
+                          {contentReview.suggestions.slice(0, 5).map((suggestion, idx) => (
+                            <div key={idx} className="text-sm text-gray-700 dark:text-gray-300 bg-white/50 dark:bg-gray-800/50 p-2 rounded border-l-3 border-primary">
+                              • {suggestion}
+                            </div>
+                          ))}
+                          {contentReview.suggestions.length > 5 && (
+                            <p className="text-xs text-gray-600 dark:text-gray-400 italic">
+                              +{contentReview.suggestions.length - 5} more suggestions
+                            </p>
+                          )}
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Publishability Status */}
+                    <div className="mt-4 pt-4 border-t border-gray-200 dark:border-gray-700">
+                      <div className="flex items-center justify-between">
+                        <span className="text-sm font-bold text-gray-800 dark:text-gray-100">
+                          Status:
+                        </span>
+                        <span className={`px-3 py-1 rounded-full text-sm font-bold ${
+                          contentReview.canPublish
+                            ? 'bg-emerald-100 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-300'
+                            : 'bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-300'
+                        }`}>
+                          {contentReview.canPublish ? '✅ Ready to Publish' : '⚠️ Review Recommended'}
+                        </span>
+                      </div>
+                    </div>
+                  </motion.div>
+                )}
 
                 {/* Checkbox */}
                 <div className="flex items-center gap-3 p-4 rounded-lg bg-primary/5 border border-primary/20">

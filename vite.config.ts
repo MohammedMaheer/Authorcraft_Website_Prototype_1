@@ -25,12 +25,6 @@ export default defineConfig({
     },
     // Compression settings
     minify: 'terser',
-    terserOptions: {
-      compress: {
-        drop_console: true,
-        drop_debugger: true,
-      },
-    },
     // CSS optimization
     cssCodeSplit: true,
     sourcemap: false,

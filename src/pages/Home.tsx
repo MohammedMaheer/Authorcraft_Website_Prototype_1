@@ -186,7 +186,7 @@ const Home: React.FC = () => {
                 transition={{ delay: 0.4 }}
                 viewport={{ once: true }}
               >
-                Every month, we organize <strong>"Steal the Spotlight"</strong> (our flagship open mic event) and work on our annual magazine <strong>"Nirvana"</strong>—a showcase of the best creative minds at NMAMIT.
+                Every Year, we organize <strong>"Steal the Spotlight"</strong> (our flagship open mic event) and work on our annual magazine <strong>"Nirvana"</strong>—a showcase of the best creative minds at NMAMIT.
               </motion.p>
               <motion.p
                 initial={{ opacity: 0, x: -30 }}
@@ -217,8 +217,8 @@ const Home: React.FC = () => {
       <section className="py-20 px-4 max-w-6xl mx-auto">
         <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
           {[
-            { number: '500+', label: 'Community Members', emoji: '👥' },
-            { number: '50+', label: 'Events Annually', emoji: '🎉' },
+            { number: '300+', label: 'Community Members', emoji: '👥' },
+            { number: '50+', label: 'Events Held', emoji: '🎉' },
             { number: '∞', label: 'Stories & Poems', emoji: '📖' },
           ].map((stat, idx) => (
             <motion.div
