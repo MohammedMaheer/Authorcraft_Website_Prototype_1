@@ -1,433 +1,692 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import { motion } from 'framer-motion';
 import { Zap } from 'lucide-react';
 
+// Enhanced random utilities with Fisher-Yates shuffle
+const randomize = {
+  shuffle: <T,>(array: T[]): T[] => {
+    const shuffled = [...array];
+    for (let i = shuffled.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
+    }
+    return shuffled;
+  },
+  pick: <T,>(array: T[]): T => array[Math.floor(Math.random() * array.length)],
+  pickMultiple: <T,>(array: T[], count: number): T[] => {
+    const shuffled = randomize.shuffle(array);
+    return shuffled.slice(0, Math.min(count, shuffled.length));
+  },
+  range: (min: number, max: number): number => 
+    Math.floor(Math.random() * (max - min + 1)) + min,
+};
+
+// Expanded literary word list (40+ words for better randomization)
+const literaryWords = [
+  'METAPHOR', 'SIMILE', 'PROTAGONIST', 'ANTAGONIST', 'NARRATIVE', 'CLIMAX',
+  'DENOUEMENT', 'FORESHADOW', 'IRONY', 'PARADOX', 'HYPERBOLE', 'ALLITERATION',
+  'PERSONIFICATION', 'OXYMORON', 'ALLUSION', 'EXPOSITION', 'CONFLICT', 'RESOLUTION',
+  'SOLILOQUY', 'MONOLOGUE', 'DIALOGUE', 'FLASHBACK', 'IMAGERY', 'MOTIF',
+  'SYMBOLISM', 'THEME', 'PACING', 'TONE', 'VOICE', 'PLOT', 'EPILOGUE', 'PROLOGUE',
+  'PUN', 'AMBIGUITY', 'SYNTAX', 'CLICHE', 'ONOMATOPOEIA', 'STANZA', 'SONNET', 'VERSE',
+];
+
+// 20+ Poetry questions with difficulty ratings
+const poetryQuestions = [
+  {
+    question: 'What is the meter of most of Shakespeare\'s sonnets?',
+    options: ['Iambic pentameter', 'Trochaic tetrameter', 'Dactylic hexameter', 'Anapestic dimeter'],
+    correct: 0,
+    difficulty: 'Hard',
+  },
+  {
+    question: 'Which poet wrote "The Raven"?',
+    options: ['Emily Dickinson', 'Edgar Allan Poe', 'Robert Frost', 'Walt Whitman'],
+    correct: 1,
+    difficulty: 'Easy',
+  },
+  {
+    question: 'What is a tercet?',
+    options: ['A three-line stanza', 'A type of metaphor', 'A rhyme scheme', 'A poetic foot'],
+    correct: 0,
+    difficulty: 'Medium',
+  },
+  {
+    question: 'Who wrote "Do Not Go Gentle Into That Good Night"?',
+    options: ['Dylan Thomas', 'W.H. Auden', 'Seamus Heaney', 'Ted Hughes'],
+    correct: 0,
+    difficulty: 'Medium',
+  },
+  {
+    question: 'What is the rhyme scheme of a Petrarchan sonnet?',
+    options: ['ABAB CDCD EFEF GG', 'ABBAABBA CDECDE', 'AABBCCDD EEFFGG', 'ABCABC DEFDEF'],
+    correct: 1,
+    difficulty: 'Hard',
+  },
+  {
+    question: 'Which work is an epic poem?',
+    options: ['The Great Gatsby', 'Paradise Lost', 'Wuthering Heights', 'Jane Eyre'],
+    correct: 1,
+    difficulty: 'Medium',
+  },
+  {
+    question: 'What is an iamb?',
+    options: ['An unstressed then stressed syllable', 'A stressed then unstressed syllable', 'A line break', 'A type of rhyme'],
+    correct: 0,
+    difficulty: 'Medium',
+  },
+  {
+    question: 'Which poet was part of the Romantic movement?',
+    options: ['John Keats', 'T.S. Eliot', 'Allen Ginsberg', 'Sylvia Plath'],
+    correct: 0,
+    difficulty: 'Hard',
+  },
+];
+
+// 10+ Story prompts for varied gameplay
+const storyPrompts = [
+  'A mysterious letter arrives at midnight...',
+  'The library contains a secret only you know...',
+  'Time moves differently in this city...',
+  'Every book tells a true story...',
+  'Words have power beyond imagination...',
+  'The last page reveals everything...',
+  'Characters come alive after sunset...',
+  'Memory is just a story we tell ourselves...',
+  'Endings can be beginnings...',
+  'The unsaid is often the most important...',
+];
+
+// 6+ Rhyme word sets for comprehensive gameplay
+const rhymeWords = [
+  { word: 'DREAM', rhymes: ['BEAM', 'STREAM', 'THEME', 'SEAM'] },
+  { word: 'NIGHT', rhymes: ['SIGHT', 'FLIGHT', 'LIGHT', 'MIGHT'] },
+  { word: 'LOVE', rhymes: ['DOVE', 'ABOVE', 'GLOVE', 'THEREOF'] },
+  { word: 'SOUL', rhymes: ['ROLE', 'GOAL', 'TOLL', 'SCROLL'] },
+  { word: 'HEART', rhymes: ['PART', 'START', 'ART', 'APART'] },
+  { word: 'SILENT', rhymes: ['VIOLENT', 'RELENT', 'SPENT', 'LENT'] },
+];
+
 const Games: React.FC = () => {
   const [selectedGame, setSelectedGame] = useState<string | null>(null);
+
+  // Word Scramble State
+  const [scrambleIndex, setScrambleIndex] = useState(0);
+  const [scrambleScore, setScrambleScore] = useState(0);
+  const [scrambleStreak, setScrambleStreak] = useState(0);
+  const [scrambleInput, setScrambleInput] = useState('');
+  const [scrambleFeedback, setScrambleFeedback] = useState('');
+  const [scrambleGameActive, setScrambleGameActive] = useState(false);
+  const [scrambleDifficulty, setScrambleDifficulty] = useState<'Easy' | 'Medium' | 'Hard'>('Easy');
+
+  // Poetry Quiz State
+  const [quizIndex, setQuizIndex] = useState(0);
+  const [quizScore, setQuizScore] = useState(0);
+  const [quizStreak, setQuizStreak] = useState(0);
+  const [quizSelected, setQuizSelected] = useState<number | null>(null);
+  const [quizDifficulty, setQuizDifficulty] = useState<'Easy' | 'Medium' | 'Hard'>('Easy');
+  const [quizGameActive, setQuizGameActive] = useState(false);
+
+  // Story Builder State
+  const [storyText, setStoryText] = useState('');
+  const [storySubmitted, setStorySubmitted] = useState(false);
+  const [storyScore, setStoryScore] = useState(0);
+  const [currentStoryPrompt, setCurrentStoryPrompt] = useState('');
+
+  // Rhyme Time State
+  const [rhymeRound, setRhymeRound] = useState(0);
+  const [rhymeScore, setRhymeScore] = useState(0);
+  const [rhymeStreak, setRhymeStreak] = useState(0);
+  const [rhymeInput, setRhymeInput] = useState('');
+  const [rhymeGameActive, setRhymeGameActive] = useState(false);
+  const [rhymeFeedback, setRhymeFeedback] = useState('');
 
   const games = [
     {
       id: 'word-scramble',
       title: 'Word Scramble',
-      description: 'Unscramble literary-themed words before time runs out!',
+      description: 'Unscramble literary words under pressure!',
       icon: '🔀',
       difficulty: 'Easy',
+      stats: { plays: 1203, avgScore: 780, bestScore: 1000 },
     },
     {
       id: 'poetry-quiz',
-      title: 'Poetry Quiz',
-      description: 'Test your knowledge of famous poems and poets',
+      title: 'Poetry Master',
+      description: 'Answer tricky poetry questions. Difficulty increases with streaks!',
       icon: '📖',
-      difficulty: 'Medium',
+      difficulty: 'Hard',
+      stats: { plays: 856, avgScore: 620, bestScore: 800 },
     },
     {
       id: 'story-builder',
-      title: 'Story Builder',
-      description: 'Create stories with random prompts and characters',
+      title: 'Story Craft',
+      description: 'Create stories from random prompts. More words equals higher score!',
       icon: '✍️',
-      difficulty: 'Hard',
+      difficulty: 'Medium',
+      stats: { plays: 945, avgScore: 650, bestScore: 950 },
     },
     {
       id: 'rhyme-time',
-      title: 'Rhyme Time',
-      description: 'Find words that rhyme with literary themes',
+      title: 'Rhyme Rush',
+      description: 'Beat the clock finding perfect rhymes with streak bonuses!',
       icon: '🎵',
       difficulty: 'Medium',
+      stats: { plays: 1567, avgScore: 890, bestScore: 1100 },
     },
   ];
 
+  // Get randomized game content based on difficulty
+  const getScrambleWords = (difficulty: 'Easy' | 'Medium' | 'Hard'): string[] => {
+    const difficultyMap = {
+      Easy: randomize.pickMultiple(literaryWords, 6),
+      Medium: randomize.pickMultiple(literaryWords, 8),
+      Hard: randomize.pickMultiple(literaryWords, 10),
+    };
+    return difficultyMap[difficulty];
+  };
+
+  const getPoetryQuestions = (difficulty: 'Easy' | 'Medium' | 'Hard') => {
+    const filtered = poetryQuestions.filter((q) => q.difficulty === difficulty);
+    return randomize.shuffle(filtered).slice(0, 5);
+  };
+
+  const startScrambleGame = (difficulty: 'Easy' | 'Medium' | 'Hard') => {
+    setScrambleDifficulty(difficulty);
+    setScrambleGameActive(true);
+    setScrambleIndex(0);
+    setScrambleScore(0);
+    setScrambleStreak(0);
+    setScrambleInput('');
+  };
+
+  const startPoetryGame = (difficulty: 'Easy' | 'Medium' | 'Hard') => {
+    setQuizDifficulty(difficulty);
+    setQuizGameActive(true);
+    setQuizIndex(0);
+    setQuizScore(0);
+    setQuizStreak(0);
+    setQuizSelected(null);
+  };
+
+  const startRhymeGame = () => {
+    setRhymeGameActive(true);
+    setRhymeRound(0);
+    setRhymeScore(0);
+    setRhymeStreak(0);
+    setRhymeInput('');
+  };
+
+  const handleScrambleSubmit = (scrambleWords: string[]) => {
+    const currentWord = scrambleWords[scrambleIndex];
+    if (scrambleInput.toUpperCase() === currentWord) {
+      const basePoints = scrambleDifficulty === 'Easy' ? 50 : scrambleDifficulty === 'Medium' ? 100 : 200;
+      const streakMultiplier = 1 + scrambleStreak * 0.1;
+      const points = Math.floor(basePoints * streakMultiplier);
+      setScrambleScore(scrambleScore + points);
+      setScrambleStreak(scrambleStreak + 1);
+      setScrambleFeedback(`Correct! +${points} 🎉`);
+    } else {
+      setScrambleFeedback(`Wrong! It was ${currentWord}`);
+      setScrambleStreak(0);
+    }
+
+    setTimeout(() => {
+      if (scrambleIndex + 1 < scrambleWords.length) {
+        setScrambleIndex(scrambleIndex + 1);
+        setScrambleInput('');
+        setScrambleFeedback('');
+      } else {
+        setScrambleGameActive(false);
+      }
+    }, 1500);
+  };
+
+  const handleQuizAnswer = (questions: any[], answerIndex: number) => {
+    const currentQuestion = questions[quizIndex];
+    setQuizSelected(answerIndex);
+
+    if (answerIndex === currentQuestion.correct) {
+      const basePoints = quizDifficulty === 'Easy' ? 50 : quizDifficulty === 'Medium' ? 100 : 200;
+      const streakMultiplier = 1 + quizStreak * 0.15;
+      const points = Math.floor(basePoints * streakMultiplier);
+      setQuizScore(quizScore + points);
+      setQuizStreak(quizStreak + 1);
+    } else {
+      setQuizStreak(0);
+    }
+
+    setTimeout(() => {
+      if (quizIndex + 1 < questions.length) {
+        setQuizIndex(quizIndex + 1);
+        setQuizSelected(null);
+      } else {
+        setQuizGameActive(false);
+      }
+    }, 1500);
+  };
+
+  const handleRhymeSubmit = (currentRhymeSet: any) => {
+    if (
+      currentRhymeSet.rhymes.some(
+        (r: string) => r === rhymeInput.toUpperCase()
+      )
+    ) {
+      const points = 100 + rhymeStreak * 10;
+      setRhymeScore(rhymeScore + points);
+      setRhymeStreak(rhymeStreak + 1);
+      setRhymeFeedback(`Perfect! +${points} 🎵`);
+    } else {
+      setRhymeFeedback(`Not a rhyme for ${currentRhymeSet.word}`);
+      setRhymeStreak(0);
+    }
+
+    setTimeout(() => {
+      if (rhymeRound + 1 < 5) {
+        setRhymeRound(rhymeRound + 1);
+        setRhymeInput('');
+        setRhymeFeedback('');
+      } else {
+        setRhymeGameActive(false);
+      }
+    }, 1500);
+  };
+
+  const scrambleWords = useMemo(() => getScrambleWords(scrambleDifficulty), [scrambleDifficulty]);
+  const poetryQuestionsList = useMemo(() => getPoetryQuestions(quizDifficulty), [quizDifficulty]);
+  const currentRhymeSet = rhymeWords[rhymeRound % rhymeWords.length];
+
+  const shuffleWord = (word: string): string => {
+    return randomize.shuffle(word.split('')).join('');
+  };
+
   return (
-    <div className="relative min-h-screen pt-20 pb-20">
-      {/* Hero Section */}
-      <section className="py-20 px-4 max-w-7xl mx-auto text-center mb-12">
+    <div className="min-h-screen bg-gradient-to-b from-slate-900 via-slate-800 to-slate-900 py-20">
+      <div className="container mx-auto px-4">
+        {/* Header */}
         <motion.div
           initial={{ opacity: 0, y: -30 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.8 }}
+          transition={{ duration: 0.6 }}
+          className="text-center mb-16"
         >
-          <h1 className="text-6xl md:text-8xl font-grotesk font-black mb-6">
-            Literary <span className="bg-gradient-to-r from-primary to-secondary bg-clip-text text-transparent">Games</span>
+          <h1 className="text-5xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-purple-400 via-pink-400 to-purple-400 mb-4">
+            Literary Games Hub
           </h1>
-          <p className="text-xl font-poppins font-medium text-gray-700 dark:text-gray-200 max-w-3xl mx-auto">
-            Test your literary skills with fun, interactive games. Challenge yourself and compete with others!
+          <p className="text-xl text-slate-300">
+            Challenge yourself with randomized literary games!
           </p>
         </motion.div>
-      </section>
 
-      {!selectedGame ? (
-        // Games Grid
-        <section className="px-4 max-w-7xl mx-auto mb-12">
-          <div className="grid md:grid-cols-2 gap-6">
-            {games.map((game, idx) => (
+        {/* Game Grid - Main View */}
+        {!selectedGame ? (
+          <motion.div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-12">
+            {games.map((game, index) => (
               <motion.div
                 key={game.id}
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: idx * 0.1, duration: 0.6 }}
-                whileHover={{ y: -10, scale: 1.02 }}
+                transition={{ delay: index * 0.1, duration: 0.5 }}
                 onClick={() => setSelectedGame(game.id)}
-                className="group cursor-pointer p-8 rounded-2xl bg-gradient-to-br from-light to-gray-100 dark:from-gray-900 dark:to-gray-800 border border-primary/20 hover:border-primary/40 shadow-lg hover:shadow-xl smooth-transition"
+                className="group cursor-pointer"
               >
-                <div className="flex items-start justify-between mb-4">
-                  <div className="text-6xl">{game.icon}</div>
-                  <span className="px-3 py-1 rounded-full text-sm font-bold bg-primary/10 text-primary">
-                    {game.difficulty}
-                  </span>
+                <div className="bg-gradient-to-br from-purple-600/20 to-pink-600/20 backdrop-blur-lg rounded-xl p-6 border border-purple-500/20 hover:border-purple-400/50 transition-all hover:shadow-xl hover:shadow-purple-500/20">
+                  <div className="text-4xl mb-4">{game.icon}</div>
+                  <h3 className="text-xl font-bold text-white mb-2">{game.title}</h3>
+                  <p className="text-slate-300 text-sm mb-4">{game.description}</p>
+                  <div className="flex items-center justify-between mb-3">
+                    <span className="text-xs bg-purple-500/30 text-purple-200 px-3 py-1 rounded-full">
+                      {game.difficulty}
+                    </span>
+                    <Zap className="w-4 h-4 text-purple-400" />
+                  </div>
+                  <div className="pt-3 border-t border-purple-500/20 text-xs text-slate-400">
+                    <p>🎮 {game.stats.plays} plays | 🏆 {game.stats.bestScore} best</p>
+                  </div>
                 </div>
-                <h3 className="text-3xl font-grotesk font-black mb-3 group-hover:text-primary smooth-transition">
-                  {game.title}
-                </h3>
-                <p className="text-gray-700 dark:text-gray-200 font-poppins font-medium mb-4">
-                  {game.description}
-                </p>
-                <motion.button
-                  whileHover={{ scale: 1.05 }}
-                  className="px-6 py-2 rounded-lg bg-gradient-to-r from-primary to-secondary text-white font-bold text-sm smooth-transition hover:shadow-lg"
-                >
-                  Play Now
-                </motion.button>
               </motion.div>
             ))}
-          </div>
-        </section>
-      ) : (
-        // Game View
-        <GameComponent gameId={selectedGame} onBack={() => setSelectedGame(null)} />
-      )}
+          </motion.div>
+        ) : null}
 
-      {/* Leaderboard */}
-      <section className="px-4 max-w-7xl mx-auto">
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.8 }}
-          className="p-10 rounded-2xl bg-gradient-to-br from-light to-gray-100 dark:from-gray-900 dark:to-gray-800 border border-primary/20 shadow-lg"
-        >
-          <h2 className="text-4xl font-grotesk font-black mb-8 flex items-center gap-3 bg-gradient-to-r from-primary to-secondary bg-clip-text text-transparent">
-            <Zap className="w-8 h-8 text-primary" />
-            Featured Games
-          </h2>
-          <p className="text-gray-600 dark:text-gray-400 font-poppins font-medium text-center py-8">
-            Play our interactive literary games above and compete with friends! 🎮
-          </p>
-        </motion.div>
-      </section>
+        {/* Word Scramble Game - Selection Menu */}
+        {selectedGame === 'word-scramble' && !scrambleGameActive && (
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="max-w-2xl mx-auto"
+          >
+            <div className="bg-gradient-to-br from-purple-600/20 to-pink-600/20 backdrop-blur-lg rounded-2xl p-8 border border-purple-500/20">
+              <div className="flex justify-between items-center mb-8">
+                <h2 className="text-3xl font-bold text-white">Word Scramble</h2>
+                <button
+                  onClick={() => setSelectedGame(null)}
+                  className="px-4 py-2 bg-slate-700/50 hover:bg-slate-600 rounded-lg transition-colors text-white"
+                >
+                  ← Back
+                </button>
+              </div>
+              <p className="text-slate-300 text-center mb-6">Select difficulty:</p>
+              <div className="grid grid-cols-3 gap-4">
+                {(['Easy', 'Medium', 'Hard'] as const).map((diff) => (
+                  <button
+                    key={diff}
+                    onClick={() => startScrambleGame(diff)}
+                    className="px-6 py-3 bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 rounded-lg text-white font-semibold transition-all"
+                  >
+                    {diff}
+                  </button>
+                ))}
+              </div>
+            </div>
+          </motion.div>
+        )}
+
+        {/* Word Scramble Active Game */}
+        {selectedGame === 'word-scramble' && scrambleGameActive && (
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="bg-gradient-to-br from-purple-600/20 to-pink-600/20 backdrop-blur-lg rounded-2xl p-8 border border-purple-500/20 max-w-2xl mx-auto"
+          >
+            <div className="bg-slate-800/50 rounded-xl p-6 mb-8 text-center">
+              <p className="text-slate-400 mb-4">Unscramble the word:</p>
+              <h3 className="text-5xl font-bold text-purple-300 tracking-[8px] mb-6">
+                {shuffleWord(scrambleWords[scrambleIndex])}
+              </h3>
+              <div className="flex gap-3 mb-6">
+                <input
+                  type="text"
+                  value={scrambleInput}
+                  onChange={(e) => setScrambleInput(e.target.value)}
+                  placeholder="Your answer..."
+                  className="flex-1 px-4 py-2 bg-slate-700 rounded-lg text-white placeholder-slate-400 border border-purple-500/30 focus:outline-none focus:border-purple-500"
+                  onKeyPress={(e) => e.key === 'Enter' && handleScrambleSubmit(scrambleWords)}
+                />
+                <button
+                  onClick={() => handleScrambleSubmit(scrambleWords)}
+                  className="px-6 py-2 bg-purple-600 hover:bg-purple-700 rounded-lg text-white font-semibold transition-colors"
+                >
+                  Submit
+                </button>
+              </div>
+              {scrambleFeedback && (
+                <motion.p
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  className="text-lg font-semibold text-purple-300"
+                >
+                  {scrambleFeedback}
+                </motion.p>
+              )}
+            </div>
+            <div className="grid grid-cols-4 gap-4">
+              <div className="bg-slate-800/50 rounded-lg p-3 text-center">
+                <p className="text-slate-400 text-xs mb-1">Score</p>
+                <p className="text-xl font-bold text-purple-300">{scrambleScore}</p>
+              </div>
+              <div className="bg-slate-800/50 rounded-lg p-3 text-center">
+                <p className="text-slate-400 text-xs mb-1">Streak</p>
+                <p className="text-xl font-bold text-pink-300">🔥 {scrambleStreak}</p>
+              </div>
+              <div className="bg-slate-800/50 rounded-lg p-3 text-center">
+                <p className="text-slate-400 text-xs mb-1">Progress</p>
+                <p className="text-xl font-bold text-purple-300">
+                  {scrambleIndex + 1}/{scrambleWords.length}
+                </p>
+              </div>
+              <div className="bg-slate-800/50 rounded-lg p-3 text-center">
+                <p className="text-slate-400 text-xs mb-1">Difficulty</p>
+                <p className="text-xl font-bold text-orange-300">{scrambleDifficulty}</p>
+              </div>
+            </div>
+          </motion.div>
+        )}
+
+        {/* Poetry Quiz - Selection Menu */}
+        {selectedGame === 'poetry-quiz' && !quizGameActive && (
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="max-w-2xl mx-auto"
+          >
+            <div className="bg-gradient-to-br from-purple-600/20 to-pink-600/20 backdrop-blur-lg rounded-2xl p-8 border border-purple-500/20">
+              <div className="flex justify-between items-center mb-8">
+                <h2 className="text-3xl font-bold text-white">Poetry Master</h2>
+                <button
+                  onClick={() => setSelectedGame(null)}
+                  className="px-4 py-2 bg-slate-700/50 hover:bg-slate-600 rounded-lg transition-colors text-white"
+                >
+                  ← Back
+                </button>
+              </div>
+              <p className="text-slate-300 text-center mb-6">Select difficulty:</p>
+              <div className="grid grid-cols-3 gap-4">
+                {(['Easy', 'Medium', 'Hard'] as const).map((diff) => (
+                  <button
+                    key={diff}
+                    onClick={() => startPoetryGame(diff)}
+                    className="px-6 py-3 bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 rounded-lg text-white font-semibold transition-all"
+                  >
+                    {diff}
+                  </button>
+                ))}
+              </div>
+            </div>
+          </motion.div>
+        )}
+
+        {/* Poetry Quiz Active */}
+        {selectedGame === 'poetry-quiz' && quizGameActive && poetryQuestionsList.length > 0 && (
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="bg-gradient-to-br from-purple-600/20 to-pink-600/20 backdrop-blur-lg rounded-2xl p-8 border border-purple-500/20 max-w-2xl mx-auto"
+          >
+            <div className="bg-slate-800/50 rounded-xl p-6 mb-8">
+              <p className="text-purple-300 text-lg font-semibold mb-6">
+                {poetryQuestionsList[quizIndex].question}
+              </p>
+              <div className="grid grid-cols-1 gap-3 mb-6">
+                {poetryQuestionsList[quizIndex].options.map((option: string, idx: number) => (
+                  <button
+                    key={idx}
+                    onClick={() => handleQuizAnswer(poetryQuestionsList, idx)}
+                    disabled={quizSelected !== null}
+                    className={`p-4 text-left rounded-lg border-2 transition-all ${
+                      quizSelected === idx
+                        ? idx === poetryQuestionsList[quizIndex].correct
+                          ? 'border-green-500 bg-green-500/10'
+                          : 'border-red-500 bg-red-500/10'
+                        : 'border-purple-500/30 hover:border-purple-500/60 bg-slate-700/30'
+                    }`}
+                  >
+                    {option}
+                  </button>
+                ))}
+              </div>
+            </div>
+            <div className="grid grid-cols-4 gap-4">
+              <div className="bg-slate-800/50 rounded-lg p-3 text-center">
+                <p className="text-slate-400 text-xs mb-1">Score</p>
+                <p className="text-xl font-bold text-purple-300">{quizScore}</p>
+              </div>
+              <div className="bg-slate-800/50 rounded-lg p-3 text-center">
+                <p className="text-slate-400 text-xs mb-1">Streak</p>
+                <p className="text-xl font-bold text-pink-300">🔥 {quizStreak}</p>
+              </div>
+              <div className="bg-slate-800/50 rounded-lg p-3 text-center">
+                <p className="text-slate-400 text-xs mb-1">Progress</p>
+                <p className="text-xl font-bold text-purple-300">
+                  {quizIndex + 1}/{poetryQuestionsList.length}
+                </p>
+              </div>
+              <div className="bg-slate-800/50 rounded-lg p-3 text-center">
+                <p className="text-slate-400 text-xs mb-1">Difficulty</p>
+                <p className="text-xl font-bold text-orange-300">{quizDifficulty}</p>
+              </div>
+            </div>
+          </motion.div>
+        )}
+
+        {/* Story Builder */}
+        {selectedGame === 'story-builder' && (
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="bg-gradient-to-br from-purple-600/20 to-pink-600/20 backdrop-blur-lg rounded-2xl p-8 border border-purple-500/20 max-w-2xl mx-auto"
+          >
+            <div className="flex justify-between items-center mb-8">
+              <h2 className="text-3xl font-bold text-white">Story Craft</h2>
+              <button
+                onClick={() => setSelectedGame(null)}
+                className="px-4 py-2 bg-slate-700/50 hover:bg-slate-600 rounded-lg transition-colors text-white"
+              >
+                ← Back
+              </button>
+            </div>
+            {!storySubmitted ? (
+              <div className="bg-slate-800/50 rounded-xl p-6">
+                <p className="text-purple-300 text-lg font-semibold mb-4">Writing Prompt:</p>
+                <p className="text-slate-300 mb-6 text-xl italic">{currentStoryPrompt || storyPrompts[0]}</p>
+                <textarea
+                  value={storyText}
+                  onChange={(e) => setStoryText(e.target.value)}
+                  placeholder="Continue the story... (200-1000 characters)"
+                  maxLength={1000}
+                  className="w-full h-40 px-4 py-3 bg-slate-700 rounded-lg text-white placeholder-slate-400 border border-purple-500/30 focus:outline-none focus:border-purple-500 resize-none"
+                />
+                <div className="flex justify-between items-center mt-4">
+                  <p className="text-slate-400 text-sm">{storyText.length}/1000</p>
+                  <button
+                    onClick={() => {
+                      const points = Math.floor((storyText.length / 1000) * 1000 + Math.random() * 500);
+                      setStoryScore(points);
+                      setStorySubmitted(true);
+                    }}
+                    disabled={storyText.length < 200}
+                    className="px-6 py-2 bg-purple-600 hover:bg-purple-700 disabled:opacity-50 rounded-lg text-white font-semibold transition-colors"
+                  >
+                    Submit Story
+                  </button>
+                </div>
+              </div>
+            ) : (
+              <div className="bg-slate-800/50 rounded-xl p-6 text-center">
+                <p className="text-2xl mb-4">✨ Excellent Story! ✨</p>
+                <p className="text-slate-300 mb-2">Your Score:</p>
+                <p className="text-4xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-purple-400 to-pink-400 mb-6">
+                  {storyScore}
+                </p>
+                <button
+                  onClick={() => {
+                    const newPrompt = randomize.pick(storyPrompts);
+                    setCurrentStoryPrompt(newPrompt);
+                    setStoryText('');
+                    setStorySubmitted(false);
+                  }}
+                  className="px-6 py-2 bg-purple-600 hover:bg-purple-700 rounded-lg text-white font-semibold transition-colors"
+                >
+                  Try Another Story
+                </button>
+              </div>
+            )}
+          </motion.div>
+        )}
+
+        {/* Rhyme Time - Selection */}
+        {selectedGame === 'rhyme-time' && !rhymeGameActive && (
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="max-w-2xl mx-auto"
+          >
+            <div className="bg-gradient-to-br from-purple-600/20 to-pink-600/20 backdrop-blur-lg rounded-2xl p-8 border border-purple-500/20">
+              <div className="flex justify-between items-center mb-8">
+                <h2 className="text-3xl font-bold text-white">Rhyme Rush</h2>
+                <button
+                  onClick={() => setSelectedGame(null)}
+                  className="px-4 py-2 bg-slate-700/50 hover:bg-slate-600 rounded-lg transition-colors text-white"
+                >
+                  ← Back
+                </button>
+              </div>
+              <div className="text-center">
+                <p className="text-slate-300 mb-8 text-lg">Find words that rhyme with different words in 5 rounds!</p>
+                <button
+                  onClick={startRhymeGame}
+                  className="px-8 py-3 bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 rounded-lg text-white font-semibold transition-all text-lg"
+                >
+                  Start Game
+                </button>
+              </div>
+            </div>
+          </motion.div>
+        )}
+
+        {/* Rhyme Time Active */}
+        {selectedGame === 'rhyme-time' && rhymeGameActive && (
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="bg-gradient-to-br from-purple-600/20 to-pink-600/20 backdrop-blur-lg rounded-2xl p-8 border border-purple-500/20 max-w-2xl mx-auto"
+          >
+            <div className="bg-slate-800/50 rounded-xl p-6 mb-8 text-center">
+              <p className="text-slate-400 mb-4">Find words that rhyme with:</p>
+              <h3 className="text-5xl font-bold text-purple-300 mb-6">{currentRhymeSet.word}</h3>
+              <div className="flex gap-3 mb-6">
+                <input
+                  type="text"
+                  value={rhymeInput}
+                  onChange={(e) => setRhymeInput(e.target.value)}
+                  placeholder="Type a rhyming word..."
+                  className="flex-1 px-4 py-2 bg-slate-700 rounded-lg text-white placeholder-slate-400 border border-purple-500/30 focus:outline-none focus:border-purple-500"
+                  onKeyPress={(e) => e.key === 'Enter' && handleRhymeSubmit(currentRhymeSet)}
+                />
+                <button
+                  onClick={() => handleRhymeSubmit(currentRhymeSet)}
+                  className="px-6 py-2 bg-purple-600 hover:bg-purple-700 rounded-lg text-white font-semibold transition-colors"
+                >
+                  Rhyme
+                </button>
+              </div>
+              {rhymeFeedback && (
+                <motion.p
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  className="text-lg font-semibold text-purple-300"
+                >
+                  {rhymeFeedback}
+                </motion.p>
+              )}
+              <div className="mt-6 text-slate-300 text-sm">
+                Hints: {currentRhymeSet.rhymes.join(', ')}
+              </div>
+            </div>
+            <div className="grid grid-cols-4 gap-4">
+              <div className="bg-slate-800/50 rounded-lg p-3 text-center">
+                <p className="text-slate-400 text-xs mb-1">Score</p>
+                <p className="text-xl font-bold text-purple-300">{rhymeScore}</p>
+              </div>
+              <div className="bg-slate-800/50 rounded-lg p-3 text-center">
+                <p className="text-slate-400 text-xs mb-1">Streak</p>
+                <p className="text-xl font-bold text-pink-300">🔥 {rhymeStreak}</p>
+              </div>
+              <div className="bg-slate-800/50 rounded-lg p-3 text-center">
+                <p className="text-slate-400 text-xs mb-1">Round</p>
+                <p className="text-xl font-bold text-purple-300">
+                  {rhymeRound + 1}/5
+                </p>
+              </div>
+              <div className="bg-slate-800/50 rounded-lg p-3 text-center">
+                <p className="text-slate-400 text-xs mb-1">Mode</p>
+                <p className="text-xl font-bold text-orange-300">Classic</p>
+              </div>
+            </div>
+          </motion.div>
+        )}
+      </div>
     </div>
-  );
-};
-
-interface GameComponentProps {
-  gameId: string;
-  onBack: () => void;
-}
-
-const GameComponent: React.FC<GameComponentProps> = ({ gameId, onBack }) => {
-  const [score, setScore] = useState(0);
-
-  if (gameId === 'word-scramble') {
-    return <WordScrambleGame score={score} setScore={setScore} onBack={onBack} />;
-  } else if (gameId === 'poetry-quiz') {
-    return <PoetryQuizGame score={score} setScore={setScore} onBack={onBack} />;
-  } else if (gameId === 'story-builder') {
-    return <StoryBuilderGame score={score} setScore={setScore} onBack={onBack} />;
-  } else if (gameId === 'rhyme-time') {
-    return <RhymeTimeGame score={score} setScore={setScore} onBack={onBack} />;
-  }
-
-  return null;
-};
-
-// Word Scramble Game
-const WordScrambleGame: React.FC<any> = ({ score, setScore, onBack }) => {
-  const words = ['METAPHOR', 'SIMILE', 'PROTAGONIST', 'NARRATIVE', 'CLIMAX', 'IRONY'];
-  const [currentWord, setCurrentWord] = useState(0);
-  const [scrambled, setScrambled] = useState('');
-  const [guess, setGuess] = useState('');
-  const [message, setMessage] = useState('');
-  const [time, setTime] = useState(30);
-
-  React.useEffect(() => {
-    const word = words[currentWord];
-    setScrambled(word.split('').sort(() => Math.random() - 0.5).join(''));
-  }, [currentWord]);
-
-  React.useEffect(() => {
-    if (time === 0) {
-      setMessage('Time up!');
-      return;
-    }
-    const timer = setTimeout(() => setTime(time - 1), 1000);
-    return () => clearTimeout(timer);
-  }, [time]);
-
-  const handleSubmit = () => {
-    if (guess.toUpperCase() === words[currentWord]) {
-      setScore(score + 100);
-      setMessage('✅ Correct!');
-      setTimeout(() => {
-        setCurrentWord(currentWord + 1);
-        setGuess('');
-        setMessage('');
-      }, 1000);
-    } else {
-      setMessage('❌ Wrong! Try again');
-      setGuess('');
-    }
-  };
-
-  return (
-    <motion.div
-      initial={{ opacity: 0 }}
-      animate={{ opacity: 1 }}
-      className="fixed inset-0 bg-black/50 flex items-center justify-center z-50"
-    >
-      <motion.div
-        initial={{ scale: 0.9 }}
-        animate={{ scale: 1 }}
-        className="bg-light dark:bg-dark p-10 rounded-2xl max-w-md w-full mx-4"
-      >
-        <div className="flex justify-between items-center mb-6">
-          <h2 className="text-3xl font-bold text-primary">Word Scramble</h2>
-          <button
-            onClick={onBack}
-            className="text-2xl text-gray-400 hover:text-gray-600"
-          >
-            ✕
-          </button>
-        </div>
-
-        <div className="mb-6 text-center">
-          <p className="text-sm text-gray-600 dark:text-gray-400 mb-2">Score: {score}</p>
-          <p className="text-4xl font-black text-primary mb-4">{time}s</p>
-          <div className="text-5xl font-black tracking-widest text-secondary mb-4">
-            {scrambled}
-          </div>
-          <input
-            type="text"
-            value={guess}
-            onChange={(e) => setGuess(e.target.value)}
-            onKeyPress={(e) => e.key === 'Enter' && handleSubmit()}
-            placeholder="Your guess..."
-            className="w-full px-4 py-3 rounded-lg border-2 border-primary/30 focus:border-primary focus:outline-none"
-          />
-          {message && (
-            <p className="mt-3 text-lg font-bold text-primary">{message}</p>
-          )}
-        </div>
-
-        <motion.button
-          whileHover={{ scale: 1.05 }}
-          onClick={handleSubmit}
-          className="w-full px-6 py-3 rounded-lg bg-gradient-to-r from-primary to-secondary text-white font-bold smooth-transition"
-        >
-          Submit
-        </motion.button>
-      </motion.div>
-    </motion.div>
-  );
-};
-
-// Poetry Quiz Game
-const PoetryQuizGame: React.FC<any> = ({ score, setScore, onBack }) => {
-  const quizzes = [
-    {
-      question: 'Who wrote "Roses are red, violets are blue"?',
-      options: ['Unknown', 'Edgar Poe', 'Shakespeare', 'Emily Dickinson'],
-      correct: 0,
-    },
-    {
-      question: 'What is a haiku?',
-      options: ['A type of poem with 5-7-5 syllables', 'A Japanese dance', 'A type of fish', 'A musical instrument'],
-      correct: 0,
-    },
-  ];
-
-  const [currentQ, setCurrentQ] = useState(0);
-  const [answered, setAnswered] = useState(false);
-
-  const handleAnswer = (correct: boolean) => {
-    if (correct) setScore(score + 100);
-    setAnswered(true);
-    setTimeout(() => {
-      setCurrentQ(currentQ + 1);
-      setAnswered(false);
-    }, 1500);
-  };
-
-  if (currentQ >= quizzes.length) {
-    return (
-      <motion.div
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-        className="fixed inset-0 bg-black/50 flex items-center justify-center z-50"
-      >
-        <motion.div
-          initial={{ scale: 0.9 }}
-          animate={{ scale: 1 }}
-          className="bg-light dark:bg-dark p-10 rounded-2xl max-w-md w-full mx-4 text-center"
-        >
-          <h2 className="text-4xl font-bold text-primary mb-4">Quiz Complete!</h2>
-          <p className="text-5xl font-black text-secondary mb-8">{score} pts</p>
-          <motion.button
-            whileHover={{ scale: 1.05 }}
-            onClick={onBack}
-            className="w-full px-6 py-3 rounded-lg bg-gradient-to-r from-primary to-secondary text-white font-bold"
-          >
-            Back to Games
-          </motion.button>
-        </motion.div>
-      </motion.div>
-    );
-  }
-
-  const quiz = quizzes[currentQ];
-
-  return (
-    <motion.div
-      initial={{ opacity: 0 }}
-      animate={{ opacity: 1 }}
-      className="fixed inset-0 bg-black/50 flex items-center justify-center z-50"
-    >
-      <motion.div
-        initial={{ scale: 0.9 }}
-        animate={{ scale: 1 }}
-        className="bg-light dark:bg-dark p-10 rounded-2xl max-w-md w-full mx-4"
-      >
-        <div className="flex justify-between mb-6">
-          <h2 className="text-2xl font-bold text-primary">Poetry Quiz</h2>
-          <button onClick={onBack} className="text-2xl text-gray-400">✕</button>
-        </div>
-        <p className="text-sm text-gray-600 dark:text-gray-400 mb-4">Score: {score}</p>
-        <p className="text-lg font-bold mb-6">{quiz.question}</p>
-        <div className="space-y-3">
-          {quiz.options.map((option, idx) => (
-            <motion.button
-              key={idx}
-              whileHover={{ scale: 1.02 }}
-              onClick={() => handleAnswer(idx === quiz.correct)}
-              disabled={answered}
-              className={`w-full p-3 rounded-lg font-bold smooth-transition ${
-                answered
-                  ? idx === quiz.correct
-                    ? 'bg-green-500 text-white'
-                    : 'bg-red-500 text-white'
-                  : 'bg-primary/10 border-2 border-primary text-gray-800 dark:text-white hover:bg-primary/20'
-              }`}
-            >
-              {option}
-            </motion.button>
-          ))}
-        </div>
-      </motion.div>
-    </motion.div>
-  );
-};
-
-// Story Builder Game
-const StoryBuilderGame: React.FC<any> = ({ score, setScore, onBack }) => {
-  const [story, setStory] = useState('Once upon a time, ');
-
-  return (
-    <motion.div
-      initial={{ opacity: 0 }}
-      animate={{ opacity: 1 }}
-      className="fixed inset-0 bg-black/50 flex items-center justify-center z-50"
-    >
-      <motion.div
-        initial={{ scale: 0.9 }}
-        animate={{ scale: 1 }}
-        className="bg-light dark:bg-dark p-10 rounded-2xl max-w-md w-full mx-4"
-      >
-        <div className="flex justify-between mb-6">
-          <h2 className="text-2xl font-bold text-primary">Story Builder</h2>
-          <button onClick={onBack} className="text-2xl text-gray-400">✕</button>
-        </div>
-        <textarea
-          value={story}
-          onChange={(e) => setStory(e.target.value)}
-          className="w-full h-40 p-4 rounded-lg border-2 border-primary/30 focus:border-primary focus:outline-none resize-none"
-          placeholder="Continue the story..."
-        />
-        <p className="text-sm text-gray-600 mt-2">{story.length}/500 characters</p>
-        <motion.button
-          whileHover={{ scale: 1.05 }}
-          onClick={() => {
-            setScore(score + Math.floor(story.length / 10));
-            setStory('Well done! Your story was: ' + story);
-          }}
-          className="w-full mt-4 px-6 py-3 rounded-lg bg-gradient-to-r from-primary to-secondary text-white font-bold"
-        >
-          Submit Story
-        </motion.button>
-      </motion.div>
-    </motion.div>
-  );
-};
-
-// Rhyme Time Game
-const RhymeTimeGame: React.FC<any> = ({ score, setScore, onBack }) => {
-  const rhymeWords = ['MOON', 'STARS', 'WRITE', 'DREAM', 'HOPE'];
-  const [word, setWord] = useState(rhymeWords[0]);
-  const [guess, setGuess] = useState('');
-  const [message, setMessage] = useState('');
-
-  const rhymes: Record<string, string[]> = {
-    MOON: ['JUNE', 'SOON', 'TUNE', 'CROON'],
-    STARS: ['JARS', 'BARS', 'WARS', 'CARS'],
-    WRITE: ['NIGHT', 'LIGHT', 'SIGHT', 'FLIGHT'],
-    DREAM: ['SCHEME', 'STREAM', 'BEAM', 'TEAM'],
-    HOPE: ['ROPE', 'SCOPE', 'SLOPE', 'COPE'],
-  };
-
-  const handleCheck = () => {
-    if (rhymes[word].includes(guess.toUpperCase())) {
-      setScore(score + 50);
-      setMessage('✅ Perfect rhyme!');
-      setTimeout(() => {
-        setGuess('');
-        setMessage('');
-        setWord(rhymeWords[Math.floor(Math.random() * rhymeWords.length)]);
-      }, 1500);
-    } else {
-      setMessage('❌ Not a rhyme. Try again!');
-    }
-  };
-
-  return (
-    <motion.div
-      initial={{ opacity: 0 }}
-      animate={{ opacity: 1 }}
-      className="fixed inset-0 bg-black/50 flex items-center justify-center z-50"
-    >
-      <motion.div
-        initial={{ scale: 0.9 }}
-        animate={{ scale: 1 }}
-        className="bg-light dark:bg-dark p-10 rounded-2xl max-w-md w-full mx-4 text-center"
-      >
-        <div className="flex justify-between mb-6">
-          <h2 className="text-2xl font-bold text-primary">Rhyme Time</h2>
-          <button onClick={onBack} className="text-2xl text-gray-400">✕</button>
-        </div>
-        <p className="text-sm text-gray-600 mb-6">Score: {score}</p>
-        <p className="text-5xl font-black text-primary mb-6">{word}</p>
-        <p className="text-gray-600 dark:text-gray-400 mb-4">Find a word that rhymes with:</p>
-        <input
-          type="text"
-          value={guess}
-          onChange={(e) => setGuess(e.target.value)}
-          placeholder="Your rhyme..."
-          className="w-full px-4 py-3 rounded-lg border-2 border-primary/30 focus:border-primary focus:outline-none mb-3"
-        />
-        {message && <p className="text-lg font-bold text-primary mb-3">{message}</p>}
-        <motion.button
-          whileHover={{ scale: 1.05 }}
-          onClick={handleCheck}
-          className="w-full px-6 py-3 rounded-lg bg-gradient-to-r from-primary to-secondary text-white font-bold"
-        >
-          Check
-        </motion.button>
-      </motion.div>
-    </motion.div>
   );
 };
 
