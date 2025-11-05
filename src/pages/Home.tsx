@@ -1,9 +1,115 @@
-import React from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { motion } from 'framer-motion';
-import { ArrowRight, Sparkles } from 'lucide-react';
+import { ArrowRight } from 'lucide-react';
 import { Link } from 'react-router-dom';
 
 const Home: React.FC = () => {
+  const canvasRef = useRef<HTMLCanvasElement>(null);
+  const [displayText, setDisplayText] = useState('');
+  const fullText = 'Where Words Come Alive';
+  const [featherX, setFeatherX] = useState(0);
+
+  // Typing animation effect with feather position tracking
+  useEffect(() => {
+    let currentIndex = 0;
+    const interval = setInterval(() => {
+      if (currentIndex < fullText.length) {
+        setDisplayText(fullText.slice(0, currentIndex + 1));
+        setFeatherX(currentIndex * 30);
+        currentIndex++;
+      } else {
+        clearInterval(interval);
+      }
+    }, 100);
+
+    return () => clearInterval(interval);
+  }, []);
+
+  // Ink particle animation following feather path
+  useEffect(() => {
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+
+    const ctx = canvas.getContext('2d');
+    if (!ctx) return;
+
+    const setCanvasSize = () => {
+      canvas.width = window.innerWidth;
+      canvas.height = window.innerHeight;
+    };
+
+    setCanvasSize();
+    window.addEventListener('resize', setCanvasSize);
+
+    interface InkParticle {
+      x: number;
+      y: number;
+      vx: number;
+      vy: number;
+      life: number;
+      maxLife: number;
+      size: number;
+    }
+
+    const particles: InkParticle[] = [];
+
+    const addInkParticles = (x: number, y: number, count: number) => {
+      for (let i = 0; i < count; i++) {
+        const angle = Math.random() * Math.PI * 2;
+        const velocity = Math.random() * 0.8 + 0.2;
+        particles.push({
+          x,
+          y,
+          vx: Math.cos(angle) * velocity,
+          vy: Math.sin(angle) * velocity,
+          life: 1,
+          maxLife: Math.random() * 0.7 + 0.4,
+          size: Math.random() * 1 + 0.5,
+        });
+      }
+    };
+
+    let time = 0;
+    const animate = () => {
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+      time += 0.016;
+
+      // Add particles near feather position as it writes
+      const featherScreenX = (canvas.width / 2 - 100) + featherX;
+      const featherScreenY = canvas.height / 2.8;
+
+      if (Math.random() > 0.75) {
+        addInkParticles(featherScreenX, featherScreenY, 1);
+      }
+
+      particles.forEach((p, idx) => {
+        p.x += p.vx;
+        p.y += p.vy;
+        p.life -= 0.016;
+        p.vy += 0.03;
+
+        const opacity = (p.life / p.maxLife) * 0.3;
+        ctx.fillStyle = `rgba(45, 36, 23, ${opacity})`;
+        ctx.beginPath();
+        ctx.arc(p.x, p.y, p.size * (p.life / p.maxLife), 0, Math.PI * 2);
+        ctx.fill();
+
+        if (p.life <= 0) {
+          particles.splice(idx, 1);
+        }
+      });
+
+      requestAnimationFrame(animate);
+    };
+
+    animate();
+
+    return () => {
+      window.removeEventListener('resize', setCanvasSize);
+    };
+  }, [featherX]);
+
   const containerVariants = {
     hidden: { opacity: 0 },
     visible: {
@@ -25,127 +131,159 @@ const Home: React.FC = () => {
   };
 
   return (
-    <div className="relative">
-      {/* Hero Section with 3D effect */}
-      <section className="min-h-screen flex items-center justify-center px-4 py-20 perspective">
+    <div className="relative bg-amber-50 dark:bg-slate-950">
+      {/* Ink Canvas Background */}
+      <canvas
+        ref={canvasRef}
+        className="fixed top-0 left-0 w-full h-screen pointer-events-none opacity-30 dark:opacity-25 -z-5"
+        aria-hidden="true"
+      />
+
+      {/* Subtle decorative line pattern */}
+      <div className="fixed inset-0 opacity-5 dark:opacity-5 pointer-events-none -z-10" style={{
+        backgroundImage: `repeating-linear-gradient(
+          0deg,
+          #2d241f,
+          #2d241f 1px,
+          transparent 1px,
+          transparent 40px
+        )`
+      }} />
+
+      {/* Hero Section */}
+      <section className="min-h-screen flex items-center justify-center px-4 py-20 perspective relative overflow-hidden">
         <motion.div
           variants={containerVariants}
           initial="hidden"
           animate="visible"
-          className="text-center max-w-4xl mx-auto"
+          className="text-center max-w-5xl mx-auto relative z-10"
         >
-          {/* Badge with 3D hover */}
-          <motion.div 
-            variants={itemVariants}
-            whileHover={{ rotateX: 10, rotateY: 5, scale: 1.05 }}
-            style={{ perspective: '1000px' }}
-          >
-            <div className="inline-flex items-center gap-2 mb-8 px-4 py-2 rounded-full bg-gradient-to-r from-primary/20 to-secondary/20 border border-primary/30 hover:border-primary/60 smooth-transition hover:shadow-lg hover:shadow-primary/20">
-              <Sparkles className="w-4 h-4 text-primary animate-spin" />
-              <span className="text-sm font-poppins font-semibold bg-gradient-to-r from-primary to-secondary bg-clip-text text-transparent">
-                Welcome to Authorcraft
+          {/* Badge */}
+          <motion.div variants={itemVariants} className="mb-12">
+            <div className="inline-flex items-center gap-2 px-5 py-2 rounded-sm border border-amber-900/30 bg-amber-100/40 dark:bg-amber-950/30 dark:border-amber-700/40 smooth-transition">
+              <span className="text-xs font-poppins font-semibold text-amber-900 dark:text-amber-200 tracking-widest uppercase">
+                ✎ Welcome to Authorcraft
               </span>
             </div>
           </motion.div>
 
-          {/* Main Heading with advanced 3D */}
-          <motion.div 
-            variants={itemVariants}
-            style={{ perspective: '1200px' }}
-          >
-            <h1 className="text-6xl md:text-8xl lg:text-8xl font-grotesk font-bold mb-6 leading-tight text-gray-900 dark:text-white">
-              <motion.span 
-                className="block bg-gradient-to-r from-primary to-secondary bg-clip-text text-transparent"
-                whileHover={{ scale: 1.05, rotateZ: 2 }}
-              >
-                Where Words
-              </motion.span>
-              <br />
-              <span className="relative inline-block">
-                <motion.span
-                  className="block"
-                  animate={{ y: [0, -5, 0] }}
-                  transition={{ duration: 3, repeat: Infinity }}
-                >
-                  Come Alive
-                </motion.span>
-                <motion.div
-                  className="absolute inset-0 bg-gradient-to-r from-primary to-secondary opacity-20 blur-2xl -z-10"
-                  animate={{ scale: [1, 1.2, 1], opacity: [0.2, 0.4, 0.2], rotate: [0, 10, 0] }}
-                  transition={{ duration: 4, repeat: Infinity }}
-                />
+          {/* Main Heading with Quill Writing Effect */}
+          <motion.div variants={itemVariants} style={{ perspective: '1200px' }} className="relative mb-12">
+            <h1 className="text-6xl md:text-8xl lg:text-8xl font-grotesk font-bold leading-tight text-amber-950 dark:text-amber-50 relative">
+              <span className="text-amber-950 dark:text-amber-50">
+                {displayText}
               </span>
-              <motion.span 
-                className="text-3xl md:text-5xl ml-2 inline-block"
-                animate={{ rotate: [0, 360], scale: [1, 1.2, 1] }}
-                transition={{ duration: 5, repeat: Infinity, delay: 0.2 }}
-              >
-                ✨
-              </motion.span>
+
+              {/* Animated Quill writing */}
+              {displayText.length < fullText.length && (
+                <motion.div
+                  className="absolute text-4xl md:text-5xl"
+                  style={{
+                    left: `${(displayText.length * 3.5)}%`,
+                    top: '-8px',
+                  }}
+                  animate={{
+                    y: [-3, 3, -3],
+                    rotate: [20, -20, 20],
+                  }}
+                  transition={{ duration: 0.6, repeat: Infinity }}
+                >
+                  ✒️
+                </motion.div>
+              )}
+
+              {/* Animated cursor when typing */}
+              {displayText.length < fullText.length && (
+                <motion.span
+                  animate={{ opacity: [1, 0] }}
+                  transition={{ duration: 0.6, repeat: Infinity }}
+                  className="text-amber-900 dark:text-amber-200 ml-1"
+                >
+                  |
+                </motion.span>
+              )}
+
+              {/* Quill resting after typing complete */}
+              {displayText.length === fullText.length && (
+                <motion.div
+                  className="absolute text-3xl md:text-4xl"
+                  style={{ right: '-40px', top: '15px' }}
+                  animate={{
+                    opacity: [0.7, 0.4, 0.7],
+                    y: [0, 4, 0],
+                  }}
+                  transition={{ duration: 2.5, repeat: Infinity }}
+                >
+                  ✒️
+                </motion.div>
+              )}
             </h1>
           </motion.div>
 
+          {/* Decorative line */}
+          <motion.div
+            initial={{ width: 0 }}
+            animate={{ width: '100px' }}
+            transition={{ delay: 0.6, duration: 0.8 }}
+            className="h-px bg-gradient-to-r from-transparent via-amber-900 to-transparent dark:via-amber-200 mx-auto mb-8"
+          />
+
           {/* Subtitle */}
           <motion.div variants={itemVariants}>
-            <p className="text-lg md:text-xl text-gray-600 dark:text-gray-300 mb-8 font-poppins max-w-2xl mx-auto leading-relaxed">
+            <p className="text-base md:text-lg text-amber-900/80 dark:text-amber-100/80 mb-12 font-poppins max-w-2xl mx-auto leading-relaxed font-light">
               The official literary club of NMAMIT. A community where poets, storytellers, and creators unite to celebrate the power of words. From open mics to published works, we're where your voice finds its platform.
             </p>
           </motion.div>
 
-          {/* CTA Buttons with 3D effects */}
-          <motion.div variants={itemVariants} className="flex flex-col sm:flex-row gap-4 justify-center mb-12">
+          {/* CTA Buttons */}
+          <motion.div
+            variants={itemVariants}
+            className="flex flex-col sm:flex-row gap-4 justify-center mb-16"
+          >
             <Link to="/works">
               <motion.button
-                whileHover={{ 
-                  scale: 1.08, 
-                  boxShadow: '0 30px 60px rgba(220, 38, 38, 0.3)',
-                  rotateY: 5,
+                whileHover={{
+                  scale: 1.05,
+                  boxShadow: '0 15px 30px rgba(180, 83, 9, 0.15)',
                 }}
-                whileTap={{ scale: 0.92 }}
-                style={{ perspective: '1000px' }}
-                className="px-8 py-4 rounded-lg bg-gradient-to-r from-primary to-secondary text-white font-poppins font-semibold flex items-center gap-2 justify-center smooth-transition transform-gpu"
+                whileTap={{ scale: 0.95 }}
+                className="px-8 py-3 rounded-sm bg-amber-900 text-amber-50 font-poppins font-medium flex items-center gap-2 justify-center smooth-transition transform-gpu border border-amber-900/20 hover:bg-amber-800"
               >
+                Explore Works
                 <motion.div
                   animate={{ x: [0, 3, 0] }}
                   transition={{ duration: 1.5, repeat: Infinity }}
                 >
-                  Explore Works
-                </motion.div>
-                <motion.div
-                  animate={{ x: [0, 5, 0] }}
-                  transition={{ duration: 1.5, repeat: Infinity, delay: 0.2 }}
-                >
-                  <ArrowRight className="w-5 h-5" />
+                  <ArrowRight className="w-4 h-4" />
                 </motion.div>
               </motion.button>
             </Link>
             <Link to="/submit">
               <motion.button
-                whileHover={{ 
-                  scale: 1.08, 
-                  borderColor: 'rgba(220, 38, 38, 0.8)',
-                  rotateY: -5,
+                whileHover={{
+                  scale: 1.05,
+                  backgroundColor: 'rgba(180, 83, 9, 0.05)',
+                  borderColor: 'rgba(180, 83, 9, 0.5)',
                 }}
-                whileTap={{ scale: 0.92 }}
-                style={{ perspective: '1000px' }}
-                className="px-8 py-4 rounded-lg border-2 border-primary dark:border-secondary text-primary dark:text-secondary font-poppins font-semibold flex items-center gap-2 justify-center smooth-transition hover:bg-primary/5 dark:hover:bg-secondary/5 transform-gpu"
+                whileTap={{ scale: 0.95 }}
+                className="px-8 py-3 rounded-sm border border-amber-900/30 text-amber-900 dark:text-amber-100 font-poppins font-medium flex items-center gap-2 justify-center smooth-transition hover:bg-amber-50 dark:hover:bg-amber-950/50 transform-gpu"
               >
                 Submit Your Work
-                <ArrowRight className="w-5 h-5" />
+                <ArrowRight className="w-4 h-4" />
               </motion.button>
             </Link>
           </motion.div>
 
           {/* Scroll Indicator */}
           <motion.div
-            animate={{ y: [0, 10, 0] }}
-            transition={{ duration: 2, repeat: Infinity }}
+            animate={{ y: [0, 8, 0] }}
+            transition={{ duration: 2.5, repeat: Infinity }}
             className="flex justify-center"
           >
-            <motion.div 
-              className="text-gray-400 text-sm font-poppins"
-              animate={{ opacity: [0.5, 1, 0.5] }}
-              transition={{ duration: 2, repeat: Infinity }}
+            <motion.div
+              className="text-sm font-poppins text-amber-900/60 dark:text-amber-200/60"
+              animate={{ opacity: [0.4, 1, 0.4] }}
+              transition={{ duration: 2.5, repeat: Infinity }}
             >
               Scroll to explore ↓
             </motion.div>
@@ -153,25 +291,22 @@ const Home: React.FC = () => {
         </motion.div>
       </section>
 
-      {/* About Section with 3D cards */}
-      <section className="py-20 px-4 max-w-6xl mx-auto">
-        <motion.div
-          initial={{ opacity: 0, y: 40 }}
-          whileInView={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.8 }}
-          viewport={{ once: true }}
-          className="grid md:grid-cols-2 gap-12 items-center"
-        >
+      {/* About Section */}
+      <section className="py-28 px-4 max-w-6xl mx-auto relative">
+        <div className="grid md:grid-cols-2 gap-16 items-center">
+          {/* Left */}
           <motion.div
-            initial={{ opacity: 0, x: -50 }}
+            initial={{ opacity: 0, x: -100 }}
             whileInView={{ opacity: 1, x: 0 }}
-            transition={{ duration: 0.8, delay: 0.2 }}
-            viewport={{ once: true }}
+            transition={{ duration: 1, ease: "easeOut" }}
+            viewport={{ once: true, margin: "-100px" }}
           >
-            <h2 className="text-4xl md:text-5xl font-grotesk font-bold mb-6">
-              About <span className="bg-gradient-to-r from-primary to-secondary bg-clip-text text-transparent">Authorcraft</span>
+            <div className="mb-6 h-px w-16 bg-amber-900 dark:bg-amber-200" />
+            <h2 className="text-4xl md:text-5xl font-grotesk font-bold mb-8 leading-tight text-amber-950 dark:text-amber-50">
+              About{' '}
+              <span className="text-amber-800 dark:text-amber-100">Authorcraft</span>
             </h2>
-            <div className="space-y-4 text-gray-700 dark:text-gray-300 font-poppins text-lg leading-relaxed">
+            <div className="space-y-6 text-amber-900/70 dark:text-amber-100/70 font-poppins text-base leading-relaxed font-light">
               <motion.p
                 initial={{ opacity: 0, x: -30 }}
                 whileInView={{ opacity: 1, x: 0 }}
@@ -186,7 +321,7 @@ const Home: React.FC = () => {
                 transition={{ delay: 0.4 }}
                 viewport={{ once: true }}
               >
-                Every month, we organize <strong>"Steal the Spotlight"</strong> (our flagship open mic event) and work on our annual magazine <strong>"Nirvana"</strong>—a showcase of the best creative minds at NMAMIT.
+                Every month, we organize <strong className="text-amber-900 dark:text-amber-100">"Steal the Spotlight"</strong> (our flagship open mic event) and work on our annual magazine <strong className="text-amber-900 dark:text-amber-100">"Nirvana"</strong>—a showcase of the best creative minds at NMAMIT.
               </motion.p>
               <motion.p
                 initial={{ opacity: 0, x: -30 }}
@@ -198,127 +333,174 @@ const Home: React.FC = () => {
               </motion.p>
             </div>
           </motion.div>
+
+         {/* Right */}
           <motion.div
-            initial={{ opacity: 0, rotateY: 90, scale: 0.8 }}
-            whileInView={{ opacity: 1, rotateY: 0, scale: 1 }}
-            transition={{ duration: 0.8, delay: 0.3 }}
-            viewport={{ once: true }}
-            animate={{ y: [0, 10, 0] }}
+            initial={{ opacity: 0 }}
+            whileInView={{ opacity: 1 }}
+            transition={{ duration: 1.2, ease: "easeOut" }}
+            viewport={{ once: true, margin: "-100px" }}
             style={{ perspective: '1200px' }}
-            whileHover={{ rotateX: 10, rotateY: 10, scale: 1.05 }}
-            className="relative h-80 rounded-xl overflow-hidden bg-gradient-to-br from-primary/20 to-secondary/20 flex items-center justify-center border-2 border-primary/30 shadow-lg hover:shadow-2xl hover:shadow-primary/30 smooth-transition transform-gpu"
+            whileHover={{ rotateX: 6, rotateY: 6, scale: 1.02 }}
+            className="relative h-96 rounded-sm overflow-hidden bg-gradient-to-br from-amber-100 dark:from-amber-950 to-amber-50 dark:to-slate-900 flex items-center justify-center border border-amber-900/20 dark:border-amber-700/30 shadow-lg hover:shadow-xl smooth-transition transform-gpu"
           >
-            <div className="text-6xl">📚✍️🎤</div>
+            <motion.img
+              src="/images/image.png"
+              alt="Authorcraft Literary Club"
+              initial={{ opacity: 0, scale: 0.95 }}
+              whileInView={{ opacity: 1, scale: 1 }}
+              transition={{ duration: 1.5, ease: "easeOut" }}
+              viewport={{ once: true, margin: "-100px" }}
+              className="w-full h-full object-cover"
+            />
           </motion.div>
-        </motion.div>
+        </div>
       </section>
 
-      {/* Stats Section with pop-in animations */}
-      <section className="py-20 px-4 max-w-6xl mx-auto">
+      {/* Stats Section */}
+      <section className="py-28 px-4 max-w-6xl mx-auto">
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.8 }}
+          viewport={{ once: true }}
+          className="text-center mb-20"
+        >
+          <div className="h-px w-16 bg-amber-900 dark:bg-amber-200 mx-auto mb-6" />
+          <h3 className="text-4xl font-grotesk font-bold text-amber-950 dark:text-amber-50">
+            Our Impact
+          </h3>
+        </motion.div>
+
         <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
           {[
-            { number: '500+', label: 'Community Members', emoji: '👥' },
-            { number: '50+', label: 'Events Annually', emoji: '🎉' },
-            { number: '∞', label: 'Stories & Poems', emoji: '📖' },
+            { number: '500+', label: 'Community Members' },
+            { number: '50+', label: 'Events Annually' },
+            { number: '∞', label: 'Stories & Poems' },
           ].map((stat, idx) => (
             <motion.div
               key={idx}
-              initial={{ opacity: 0, scale: 0.5, rotateZ: -180 }}
-              whileInView={{ opacity: 1, scale: 1, rotateZ: 0 }}
-              whileHover={{ y: -10, rotateX: 5 }}
-              transition={{ 
-                delay: idx * 0.15, 
-                duration: 0.6,
-                type: 'spring',
-                stiffness: 200,
-                damping: 15,
-              }}
+              initial={{ opacity: 0, y: 20 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.6, delay: idx * 0.1 }}
               viewport={{ once: true }}
-              style={{ perspective: '1200px' }}
-              className="text-center p-8 rounded-lg glass hover:border-primary/50 smooth-transition border border-primary/20 hover:shadow-xl hover:shadow-primary/20 transform-gpu cursor-pointer"
+              whileHover={{ y: -6 }}
+              className="p-10 rounded-sm bg-amber-100/50 dark:bg-amber-950/30 border border-amber-900/20 dark:border-amber-700/30 smooth-transition hover:shadow-lg text-center"
             >
-              <motion.div 
-                className="text-5xl mb-3"
-                whileHover={{ scale: 1.2, rotate: 360 }}
-                transition={{ duration: 0.6 }}
-              >
-                {stat.emoji}
-              </motion.div>
-              <div className="text-4xl font-grotesk font-bold bg-gradient-to-r from-primary to-secondary bg-clip-text text-transparent mb-2">
+              <div className="text-5xl font-grotesk font-bold text-amber-900 dark:text-amber-100 mb-3">
                 {stat.number}
               </div>
-              <p className="text-gray-600 dark:text-gray-300 font-poppins font-semibold">{stat.label}</p>
+              <p className="text-amber-900/70 dark:text-amber-100/70 font-poppins font-light">
+                {stat.label}
+              </p>
             </motion.div>
           ))}
         </div>
       </section>
 
-      {/* CTA Section with advanced 3D */}
-      <section className="py-20 px-4 max-w-4xl mx-auto text-center">
+      {/* What We Do Section */}
+      <section className="py-28 px-4 max-w-6xl mx-auto">
         <motion.div
-          initial={{ opacity: 0, scale: 0.8, rotateX: 45 }}
-          whileInView={{ opacity: 1, scale: 1, rotateX: 0 }}
+          initial={{ opacity: 0, y: 20 }}
+          whileInView={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.8 }}
           viewport={{ once: true }}
-          style={{ perspective: '1200px' }}
-          whileHover={{ 
-            scale: 1.02,
-            boxShadow: '0 40px 80px rgba(220, 38, 38, 0.2)',
-          }}
-          className="p-12 rounded-xl bg-gradient-to-r from-primary/10 to-secondary/10 border border-primary/30 hover:border-primary/50 smooth-transition shadow-lg transform-gpu"
+          className="text-center mb-20"
         >
-          <motion.h2 
-            className="text-4xl font-grotesk font-bold mb-6"
-            initial={{ opacity: 0, y: 20 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.2 }}
-            viewport={{ once: true }}
-          >
-            Ready to Join Our <span className="bg-gradient-to-r from-primary to-secondary bg-clip-text text-transparent">Creative Community</span>?
-          </motion.h2>
-          <motion.p 
-            className="text-gray-600 dark:text-gray-300 text-lg font-poppins mb-8"
-            initial={{ opacity: 0, y: 20 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.3 }}
-            viewport={{ once: true }}
-          >
-            Whether you're here to read, submit, or connect with fellow creatives—you're in the right place.
-          </motion.p>
-          <motion.div 
-            className="flex flex-col sm:flex-row gap-4 justify-center"
-            initial={{ opacity: 0, y: 20 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.4 }}
-            viewport={{ once: true }}
-          >
+          <div className="h-px w-16 bg-amber-900 dark:bg-amber-200 mx-auto mb-6" />
+          <h3 className="text-4xl font-grotesk font-bold text-amber-950 dark:text-amber-50">
+            Our Initiatives
+          </h3>
+        </motion.div>
+
+        <div className="grid md:grid-cols-2 gap-8">
+          {[
+            { title: 'Steal the Spotlight', desc: 'Monthly open mic nights where creators share their work live', icon: '🎤' },
+            { title: 'Nirvana Magazine', desc: 'Annual publication featuring the best works from our community', icon: '📖' },
+            { title: 'Writing Workshops', desc: 'Skill-building sessions with experienced writers and editors', icon: '✒️' },
+            { title: 'Prompt of the Week', desc: 'Weekly writing prompts to inspire and challenge our members', icon: '✍️' },
+          ].map((item, idx) => (
+            <motion.div
+              key={idx}
+              initial={{ opacity: 0, y: 20 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.6, delay: idx * 0.1 }}
+              viewport={{ once: true }}
+              whileHover={{ y: -4, borderColor: 'rgba(180, 83, 9, 0.3)' }}
+              className="p-10 rounded-sm bg-amber-50/80 dark:bg-slate-900/50 border border-amber-900/15 dark:border-amber-700/20 smooth-transition"
+            >
+              <div className="text-4xl mb-5">{item.icon}</div>
+              <h4 className="text-2xl font-grotesk font-bold text-amber-950 dark:text-amber-50 mb-3">
+                {item.title}
+              </h4>
+              <p className="text-amber-900/70 dark:text-amber-100/70 font-poppins text-base leading-relaxed font-light">
+                {item.desc}
+              </p>
+            </motion.div>
+          ))}
+        </div>
+      </section>
+
+      {/* CTA Section */}
+      <section className="py-28 px-4 max-w-4xl mx-auto text-center">
+        <motion.div
+          initial={{ opacity: 0, y: 40 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.8 }}
+          viewport={{ once: true }}
+          className="p-16 rounded-sm bg-amber-100/60 dark:bg-amber-950/40 border border-amber-900/20 dark:border-amber-700/30 smooth-transition"
+        >
+          <div className="h-px w-16 bg-amber-900 dark:bg-amber-200 mx-auto mb-8" />
+          <h2 className="text-4xl font-grotesk font-bold mb-6 text-amber-950 dark:text-amber-50">
+            Ready to Share Your Story?
+          </h2>
+          <p className="text-amber-900/70 dark:text-amber-100/70 text-lg font-poppins mb-12 max-w-2xl mx-auto font-light">
+            Join a vibrant community of writers and creators. Submit your work, attend our events, or simply be part of a movement that celebrates the written word.
+          </p>
+          <div className="flex flex-col sm:flex-row gap-4 justify-center">
             <Link to="/events">
               <motion.button
-                whileHover={{ 
-                  scale: 1.08,
-                  rotateY: 5,
-                }}
-                whileTap={{ scale: 0.92 }}
-                style={{ perspective: '1000px' }}
-                className="px-8 py-3 rounded-lg bg-gradient-to-r from-primary to-secondary text-white font-poppins font-semibold smooth-transition transform-gpu"
+                whileHover={{ scale: 1.05 }}
+                whileTap={{ scale: 0.95 }}
+                className="px-8 py-3 rounded-sm bg-amber-900 text-amber-50 font-poppins font-medium smooth-transition border border-amber-900/20 hover:bg-amber-800"
               >
-                Explore Events
+                Browse Events
               </motion.button>
             </Link>
             <Link to="/team">
               <motion.button
-                whileHover={{ 
-                  scale: 1.08,
-                  rotateY: -5,
-                }}
-                whileTap={{ scale: 0.92 }}
-                style={{ perspective: '1000px' }}
-                className="px-8 py-3 rounded-lg border-2 border-primary dark:border-secondary text-primary dark:text-secondary font-poppins font-semibold smooth-transition hover:bg-primary/5 transform-gpu"
+                whileHover={{ scale: 1.05 }}
+                whileTap={{ scale: 0.95 }}
+                className="px-8 py-3 rounded-sm border border-amber-900/30 text-amber-900 dark:text-amber-100 font-poppins font-medium smooth-transition hover:bg-amber-50 dark:hover:bg-amber-950/50"
               >
-                Meet the Team
+                Meet Our Team
               </motion.button>
             </Link>
-          </motion.div>
+          </div>
+        </motion.div>
+      </section>
+
+      {/* Footer CTA */}
+      <section className="py-16 px-4 text-center border-t border-amber-900/20 dark:border-amber-700/20">
+        <motion.div
+          initial={{ opacity: 0 }}
+          whileInView={{ opacity: 1 }}
+          transition={{ duration: 0.8 }}
+          viewport={{ once: true }}
+        >
+          <p className="text-amber-900/60 dark:text-amber-100/60 font-poppins mb-8 font-light">
+            Follow us for the latest updates, submissions, and community highlights
+          </p>
+          <motion.a
+            href="https://www.instagram.com/authorcraft_nmamit/"
+            target="_blank"
+            rel="noopener noreferrer"
+            whileHover={{ scale: 1.05 }}
+            whileTap={{ scale: 0.95 }}
+            className="inline-block px-6 py-3 rounded-sm bg-amber-900 text-amber-50 font-poppins font-medium smooth-transition hover:shadow-lg hover:shadow-amber-900/20 border border-amber-900/20"
+          >
+            Follow @authorcraft_nmamit
+          </motion.a>
         </motion.div>
       </section>
     </div>
