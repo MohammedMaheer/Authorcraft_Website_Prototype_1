@@ -1,10 +1,12 @@
 import { BrowserRouter as Router, Routes, Route, useLocation } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
+import React, { useState } from 'react';
 import { ThemeProvider } from './context/ThemeContext';
 import { Navbar } from './components/Navbar';
 import { Footer } from './components/Footer';
 import { ParticleBackground } from './components/ParticleBackground';
 import { AnimatedBackground } from './components/AnimatedBackground';
+import BookIntro from './components/BookIntro';
 import Home from './pages/Home';
 import BestWorks from './pages/BestWorks';
 import Events from './pages/Events';
@@ -38,7 +40,7 @@ const pageTransition = {
 
 function AppRoutes() {
   const location = useLocation();
-  const [direction, setDirection] = React.useState(0);
+  const [direction, setDirection] = useState(0);
 
   React.useEffect(() => {
     setDirection(1);
@@ -71,19 +73,30 @@ function AppRoutes() {
   );
 }
 
-import React from 'react';
-
 function App() {
+  // Show intro on every visit (no localStorage check)
+  const [showIntro, setShowIntro] = useState(true);
+
   return (
     <ThemeProvider>
       <Router>
-        <ParticleBackground />
-        <AnimatedBackground />
-        <div className="min-h-screen bg-light dark:bg-dark smooth-transition relative">
-          <Navbar />
-          <AppRoutes />
-          <Footer />
-        </div>
+        <AnimatePresence mode="wait">
+          {showIntro && (
+            <BookIntro onComplete={() => setShowIntro(false)} />
+          )}
+        </AnimatePresence>
+
+        {!showIntro && (
+          <>
+            <ParticleBackground />
+            <AnimatedBackground />
+            <div className="min-h-screen bg-light dark:bg-dark smooth-transition relative">
+              <Navbar />
+              <AppRoutes />
+              <Footer />
+            </div>
+          </>
+        )}
       </Router>
     </ThemeProvider>
   );
