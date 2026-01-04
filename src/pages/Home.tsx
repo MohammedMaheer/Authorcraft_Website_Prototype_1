@@ -131,7 +131,7 @@ const Home: React.FC = () => {
   };
 
   return (
-    <div className="relative bg-amber-50 dark:bg-slate-950">
+    <div className="relative bg-light dark:bg-dark">
       {/* Ink Canvas Background */}
       <canvas
         ref={canvasRef}
@@ -140,11 +140,11 @@ const Home: React.FC = () => {
       />
 
       {/* Subtle decorative line pattern */}
-      <div className="fixed inset-0 opacity-5 dark:opacity-5 pointer-events-none -z-10" style={{
+      <div className="fixed inset-0 opacity-[0.03] dark:opacity-[0.05] pointer-events-none -z-10" style={{
         backgroundImage: `repeating-linear-gradient(
           0deg,
-          #2d241f,
-          #2d241f 1px,
+          rgba(180, 83, 9, 0.5),
+          rgba(180, 83, 9, 0.5) 1px,
           transparent 1px,
           transparent 40px
         )`
@@ -152,6 +152,12 @@ const Home: React.FC = () => {
 
       {/* Hero Section */}
       <section className="min-h-screen flex items-center justify-center px-4 py-20 perspective relative overflow-hidden">
+        {/* Warm glow effects */}
+        <div className="absolute inset-0 -z-5">
+          <div className="absolute top-0 right-0 w-[600px] h-[600px] bg-warm-glow opacity-40 blur-3xl" />
+          <div className="absolute bottom-0 left-0 w-[500px] h-[500px] bg-warm-glow-left opacity-30 blur-3xl" />
+        </div>
+
         <motion.div
           variants={containerVariants}
           initial="hidden"
@@ -160,7 +166,7 @@ const Home: React.FC = () => {
         >
           {/* Badge */}
           <motion.div variants={itemVariants} className="mb-12">
-            <div className="inline-flex items-center gap-2 px-5 py-2 rounded-sm border border-amber-900/30 bg-amber-100/40 dark:bg-amber-950/30 dark:border-amber-700/40 smooth-transition">
+            <div className="inline-flex items-center gap-2 px-5 py-2 rounded-sm border border-amber-900/30 bg-white/40 dark:bg-black/20 backdrop-blur-sm smooth-transition">
               <span className="text-xs font-poppins font-semibold text-amber-900 dark:text-amber-200 tracking-widest uppercase">
                 ✎ Welcome to Authorcraft
               </span>
@@ -266,7 +272,7 @@ const Home: React.FC = () => {
                   borderColor: 'rgba(180, 83, 9, 0.5)',
                 }}
                 whileTap={{ scale: 0.95 }}
-                className="px-8 py-3 rounded-sm border border-amber-900/30 text-amber-900 dark:text-amber-100 font-poppins font-medium flex items-center gap-2 justify-center smooth-transition hover:bg-amber-50 dark:hover:bg-amber-950/50 transform-gpu"
+                className="px-8 py-3 rounded-sm border border-amber-900/30 text-amber-900 dark:text-amber-100 font-poppins font-medium flex items-center gap-2 justify-center smooth-transition bg-white/30 dark:bg-black/20 backdrop-blur-sm transform-gpu"
               >
                 Submit Your Work
                 <ArrowRight className="w-4 h-4" />
@@ -342,7 +348,7 @@ const Home: React.FC = () => {
             viewport={{ once: true, margin: "-100px" }}
             style={{ perspective: '1200px' }}
             whileHover={{ rotateX: 6, rotateY: 6, scale: 1.02 }}
-            className="relative h-96 rounded-sm overflow-hidden bg-gradient-to-br from-amber-100 dark:from-amber-950 to-amber-50 dark:to-slate-900 flex items-center justify-center border border-amber-900/20 dark:border-amber-700/30 shadow-lg hover:shadow-xl smooth-transition transform-gpu"
+            className="relative h-96 rounded-sm overflow-hidden bg-white/50 dark:bg-black/30 backdrop-blur-sm flex items-center justify-center border border-amber-900/10 dark:border-amber-700/20 shadow-lg hover:shadow-xl smooth-transition transform-gpu"
           >
             <motion.img
               src="/images/image.png"
@@ -385,7 +391,7 @@ const Home: React.FC = () => {
               transition={{ duration: 0.6, delay: idx * 0.1 }}
               viewport={{ once: true }}
               whileHover={{ y: -6 }}
-              className="p-10 rounded-sm bg-amber-100/50 dark:bg-amber-950/30 border border-amber-900/20 dark:border-amber-700/30 smooth-transition hover:shadow-lg text-center"
+              className="p-10 rounded-sm bg-white/40 dark:bg-black/20 backdrop-blur-sm border border-amber-900/10 dark:border-amber-700/20 smooth-transition hover:shadow-lg text-center"
             >
               <div className="text-5xl font-grotesk font-bold text-amber-900 dark:text-amber-100 mb-3">
                 {stat.number}
@@ -427,7 +433,7 @@ const Home: React.FC = () => {
               transition={{ duration: 0.6, delay: idx * 0.1 }}
               viewport={{ once: true }}
               whileHover={{ y: -4, borderColor: 'rgba(180, 83, 9, 0.3)' }}
-              className="p-10 rounded-sm bg-amber-50/80 dark:bg-slate-900/50 border border-amber-900/15 dark:border-amber-700/20 smooth-transition"
+              className="p-10 rounded-sm bg-white/40 dark:bg-black/20 backdrop-blur-sm border border-amber-900/10 dark:border-amber-700/20 smooth-transition"
             >
               <div className="text-4xl mb-5">{item.icon}</div>
               <h4 className="text-2xl font-grotesk font-bold text-amber-950 dark:text-amber-50 mb-3">
@@ -448,7 +454,7 @@ const Home: React.FC = () => {
           whileInView={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.8 }}
           viewport={{ once: true }}
-          className="p-16 rounded-sm bg-amber-100/60 dark:bg-amber-950/40 border border-amber-900/20 dark:border-amber-700/30 smooth-transition"
+          className="p-16 rounded-sm bg-white/50 dark:bg-black/30 backdrop-blur-sm border border-amber-900/15 dark:border-amber-700/25 smooth-transition"
         >
           <div className="h-px w-16 bg-amber-900 dark:bg-amber-200 mx-auto mb-8" />
           <h2 className="text-4xl font-grotesk font-bold mb-6 text-amber-950 dark:text-amber-50">
@@ -471,7 +477,7 @@ const Home: React.FC = () => {
               <motion.button
                 whileHover={{ scale: 1.05 }}
                 whileTap={{ scale: 0.95 }}
-                className="px-8 py-3 rounded-sm border border-amber-900/30 text-amber-900 dark:text-amber-100 font-poppins font-medium smooth-transition hover:bg-amber-50 dark:hover:bg-amber-950/50"
+                className="px-8 py-3 rounded-sm border border-amber-900/30 text-amber-900 dark:text-amber-100 font-poppins font-medium smooth-transition bg-white/30 dark:bg-black/20 backdrop-blur-sm"
               >
                 Meet Our Team
               </motion.button>

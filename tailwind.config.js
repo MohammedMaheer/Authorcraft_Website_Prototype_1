@@ -12,15 +12,17 @@ module.exports = {
         grotesk: ['Space Grotesk', 'sans-serif'],
       },
       colors: {
-        primary: '#DC2626',      // Authorcraft Red
-        secondary: '#FCD34D',    // Authorcraft Yellow
-        accent: '#F97316',       // Orange accent
-        dark: '#1a1a2e',
-        light: '#f5f5f5',
+        primary: '#DC2626',
+        secondary: '#FCD34D',
+        accent: '#F97316',
+        dark: '#1a1410',
+        light: '#f8f4ed',
       },
       backgroundImage: {
         'gradient-primary': 'linear-gradient(135deg, #DC2626 0%, #FCD34D 100%)',
         'gradient-secondary': 'linear-gradient(135deg, #FCD34D 0%, #F97316 100%)',
+        'warm-glow': 'radial-gradient(circle at top right, rgba(255,180,100,0.08), transparent)',
+        'warm-glow-left': 'radial-gradient(circle at top left, rgba(255,180,100,0.08), transparent)',
       },
       animation: {
         'float': 'float 3s ease-in-out infinite',
